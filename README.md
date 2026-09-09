@@ -8,20 +8,22 @@ Documento de arquitectura completo: ver el artifact publicado en la conversació
 
 ## Estado
 
-Fase 1 en curso: motor base + wallet real en **Base Sepolia (testnet)** + primer producto (`url-metadata`, una API x402 que cobra a otros agentes por extraer metadata limpia de una URL).
+**Fase 1 y 2 completas.** Wallet real en **Base Sepolia (testnet)**, primer producto (`url-metadata`) corriendo, y capa de gobierno con canal de aprobación humana real.
 
-Verificado en vivo contra un servidor real corriendo localmente:
-- ✅ generación de wallet real en Base Sepolia
-- ✅ challenge 402 real servido con el precio, red y `payTo` correctos
-- ✅ intento de pago real rechazado correctamente por saldo insuficiente (`invalid_exact_evm_insufficient_balance`) — la wallet de testnet todavía no tiene fondos
-- ✅ la capa de gobierno solo anota un gasto en el ledger si la liquidación realmente tuvo éxito
+Verificado en vivo contra un servidor real corriendo localmente (no solo probado manualmente — ver `src/governance/policy.test.ts` para lo automatizado):
+- ✅ generación de wallet real en Base Sepolia, con USDC y ETH de testnet fondeados
+- ✅ pago x402 real liquidado on-chain de punta a punta (challenge → firma → verificación → settlement → dato entregado)
+- ✅ intento de pago rechazado correctamente por saldo insuficiente antes de fondear — el ledger no lo contó como gasto
+- ✅ gasto por encima del umbral de aprobación queda pendiente, se aprueba con `npm run governance:approve`, se liquida solo entonces, y la aprobación queda consumida (no reutilizable)
+- ✅ tope diario bloquea un segundo gasto igual el mismo día, incluso con aprobación ya usada
+- ✅ el spend control propio del SDK de x402 (@x402/evm) se alinea al monto exacto que aprobó nuestra política, en vez de simplemente subirle el límite por defecto
 
 ## Estructura
 
 ```
 src/
-  governance/   políticas de gasto, ledger local, firewall semántico (v0)
-  wallet/       identidad on-chain (Base Sepolia por defecto; mainnet requiere opt-in explícito)
+  governance/   políticas de gasto, ledger local, aprobación humana, firewall semántico (v0)
+  wallet/       identidad on-chain — testnet y mainnet en archivos separados
   payments/     cliente x402 (para pagar) y servidor x402 (para cobrar)
   projects/     productos concretos — el primero: url-metadata
 ```
@@ -31,17 +33,25 @@ src/
 ```bash
 npm install
 npm run wallet:init      # genera la wallet (testnet por defecto)
-npm run wallet:info      # dirección, red, balance
+npm run wallet:info      # dirección, red, saldo de ETH y USDC
 npm run dev:url-metadata # levanta la API de pago (POST /extract, $0.005 USDC)
+npm test                 # tests de la política de gasto
 ```
 
 Para que un pago real se liquide, la wallet necesita fondos de testnet:
-- ETH de Base Sepolia: cualquier faucet de Base Sepolia
-- USDC de testnet: https://faucet.circle.com
+- USDC de testnet: https://faucet.circle.com (elegir red "Base Sepolia")
+- ETH de Base Sepolia (por si se necesita gas más adelante): cualquier faucet de Base Sepolia
+
+Cuando un gasto queda pendiente de aprobación:
+```bash
+npm run governance:pending          # ver qué hay pendiente
+npm run governance:approve -- <id>  # o governance:reject
+```
 
 ## Reglas de seguridad (no negociables en este repo)
 
-- **Mainnet nunca se activa por accidente.** Requiere `AUTOMATON_ALLOW_MAINNET=true` explícito.
-- **La clave privada nunca se commitea.** Vive en `~/.automaton/wallet.json`, fuera del repo.
-- **Ningún pago sale sin pasar por `governance/policy.ts`.** Toda ruta de pago (cliente x402) evalúa tope diario, tope por herramienta y umbral de aprobación humana antes de firmar — nunca después.
-- **El ledger de gasto solo registra liquidaciones reales.** Un intento de pago fallido no cuenta como gasto.
+- **Mainnet nunca se activa por accidente.** Requiere `AUTOMATON_ALLOW_MAINNET=true` explícito, y una wallet de mainnet no se crea sin `AUTOMATON_WALLET_PASSPHRASE` — nunca se guarda una clave con dinero real sin cifrar.
+- **Testnet y mainnet viven en archivos separados** (`~/.automaton/wallet.base-sepolia.json` vs `wallet.base.json`) — nunca el mismo archivo reinterpretado según una variable de entorno.
+- **La clave privada nunca se commitea.** Vive fuera del repo, en `~/.automaton/`.
+- **Ningún pago sale sin pasar por `governance/policy.ts` y, si aplica, `governance/approvals.ts`.** Tope diario, tope por herramienta y aprobación humana se evalúan antes de firmar — nunca después.
+- **El ledger de gasto solo registra liquidaciones reales**, y **una aprobación solo autoriza un pago, nunca dos.**
