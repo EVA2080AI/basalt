@@ -2,6 +2,7 @@ import { wrapFetchWithPaymentFromConfig } from "@x402/fetch";
 import { ExactEvmScheme } from "@x402/evm";
 import { loadAccount } from "../wallet/wallet.js";
 import { DEFAULT_POLICY, evaluateSpend, recordSpend } from "../governance/policy.js";
+import { requestOrGetApproval, consumeApproval } from "../governance/approvals.js";
 
 /**
  * Automaton pagando a otros vía x402. La política se evalúa ANTES de construir
@@ -48,6 +49,24 @@ export interface GatedFetchResult {
   amountUsd?: number;
 }
 
+/** Se lanza cuando un gasto necesita aprobación humana y todavía no la tiene. */
+export class ApprovalPendingError extends Error {
+  constructor(public readonly approvalId: string, amountUsd: number) {
+    super(
+      `Pago de USD ${amountUsd} requiere aprobación humana. Pendiente con id '${approvalId}'. ` +
+        `Revisa con \`npm run governance:pending\` y decide con \`npm run governance:approve -- ${approvalId}\`.`,
+    );
+    this.name = "ApprovalPendingError";
+  }
+}
+
+export class ApprovalRejectedError extends Error {
+  constructor(approvalId: string) {
+    super(`Pago rechazado por un humano (aprobación '${approvalId}').`);
+    this.name = "ApprovalRejectedError";
+  }
+}
+
 /**
  * Hace un fetch. Si el recurso es gratis, lo devuelve tal cual. Si exige pago
  * x402, evalúa el monto contra la política de gasto ANTES de pagar. Si la
@@ -80,18 +99,31 @@ export async function gatedFetch(url: string, opts: GatedFetchOptions): Promise<
   if (!verdict.allowed) {
     throw new Error(`Pago bloqueado por política de gobierno: ${verdict.reason}`);
   }
+
+  let approvalId: string | undefined;
   if (verdict.requiresHumanApproval) {
-    // Sin canal de aprobación humana conectado todavía en este prototipo:
-    // por defecto se bloquea en vez de auto-aprobar. Ver Fase 2 del roadmap.
-    throw new Error(
-      `Pago de USD ${amountUsd} requiere aprobación humana (umbral: ${verdict.reason}). ` +
-        `No hay canal de aprobación conectado — se bloquea por defecto.`,
-    );
+    const approval = requestOrGetApproval({
+      toolId,
+      counterparty: requirement.payTo,
+      amountUsd,
+      network: requirement.network,
+      reason: verdict.reason,
+    });
+
+    if (approval.status === "rejected") throw new ApprovalRejectedError(approval.id);
+    if (approval.status === "pending") throw new ApprovalPendingError(approval.id, amountUsd);
+    // status === "approved": autorizado por un humano, se consume abajo tras liquidar.
+    approvalId = approval.id;
   }
 
   const account = loadAccount();
   const fetchWithPayment = wrapFetchWithPaymentFromConfig(fetch, {
     schemes: [{ network: requirement.network as `eip155:${string}`, client: new ExactEvmScheme(account) }],
+    // Defensa en profundidad: el SDK de x402 trae su propio tope de gasto
+    // ($1 por defecto), independiente de nuestra política. En vez de subirlo
+    // de forma permanente, lo fijamos exactamente al monto que YA evaluó y
+    // aprobó governance/policy.ts para esta llamada — nunca más que eso.
+    spendControls: { maxAmountPerPayment: `$${amountUsd}` },
   });
 
   const paidResponse = await fetchWithPayment(url, init);
@@ -107,6 +139,7 @@ export async function gatedFetch(url: string, opts: GatedFetchOptions): Promise<
       amountUsd,
       network: requirement.network,
     });
+    if (approvalId) consumeApproval(approvalId);
   }
 
   return { response: paidResponse, paid: settled, amountUsd: settled ? amountUsd : undefined };

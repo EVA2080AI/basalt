@@ -35,20 +35,27 @@ interface LedgerEntry {
 }
 
 const HOME_DIR = path.join(homedir(), ".automaton");
-const LEDGER_PATH = path.join(HOME_DIR, "ledger.json");
+
+// Override solo pensado para tests — aísla el ledger real de la máquina.
+function ledgerPath(): string {
+  return process.env.AUTOMATON_LEDGER_PATH ?? path.join(HOME_DIR, "ledger.json");
+}
 
 function loadLedger(): LedgerEntry[] {
-  if (!existsSync(LEDGER_PATH)) return [];
+  const p = ledgerPath();
+  if (!existsSync(p)) return [];
   try {
-    return JSON.parse(readFileSync(LEDGER_PATH, "utf8"));
+    return JSON.parse(readFileSync(p, "utf8"));
   } catch {
     return [];
   }
 }
 
 function saveLedger(entries: LedgerEntry[]): void {
-  if (!existsSync(HOME_DIR)) mkdirSync(HOME_DIR, { recursive: true, mode: 0o700 });
-  writeFileSync(LEDGER_PATH, JSON.stringify(entries, null, 2), { mode: 0o600 });
+  const p = ledgerPath();
+  const dir = path.dirname(p);
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true, mode: 0o700 });
+  writeFileSync(p, JSON.stringify(entries, null, 2), { mode: 0o600 });
 }
 
 function spentToday(entries: LedgerEntry[]): number {
