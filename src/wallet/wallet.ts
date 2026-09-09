@@ -85,8 +85,25 @@ export function defaultNetwork(): NetworkId {
  * total y ninguna función de este módulo toca el filesystem.
  */
 function envPrivateKey(): `0x${string}` | undefined {
-  const key = process.env.AUTOMATON_PRIVATE_KEY;
-  return key ? (key as `0x${string}`) : undefined;
+  const raw = process.env.AUTOMATON_PRIVATE_KEY;
+  if (!raw) return undefined;
+
+  // Copiar y pegar un valor así en el panel de un hosting casi siempre trae
+  // espacios, saltos de línea o comillas invisibles. Se normaliza en vez de
+  // fallar con un error críptico de la librería de firma.
+  let key = raw.trim();
+  if (key.startsWith('"') && key.endsWith('"')) key = key.slice(1, -1).trim();
+  if (!key.startsWith("0x")) key = `0x${key}`;
+
+  const HEX_64 = /^0x[0-9a-fA-F]{64}$/;
+  if (!HEX_64.test(key)) {
+    throw new Error(
+      `AUTOMATON_PRIVATE_KEY tiene un formato inválido (después de limpiar espacios/comillas quedó con ${key.length - 2} caracteres hex, se esperaban 64). ` +
+        "Revisa que se haya copiado el valor completo de 'privateKey' del archivo de la wallet, sin texto adicional.",
+    );
+  }
+
+  return key as `0x${string}`;
 }
 
 export function walletExists(network: NetworkId = defaultNetwork()): boolean {
