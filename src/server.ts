@@ -17,6 +17,7 @@ import { jsonValidateProduct } from "./projects/json-validate/product.js";
 import { verifySignatureProduct } from "./projects/verify-signature/product.js";
 import { financialIdCheckProduct } from "./projects/financial-id-check/product.js";
 import { geoDistanceProduct } from "./projects/geo-distance/product.js";
+import { markdownToHtmlProduct } from "./projects/markdown-to-html/product.js";
 
 /**
  * Un solo servidor para todos los productos de Basalt. Agregar el producto
@@ -35,6 +36,7 @@ const PRODUCTS: Product[] = [
   verifySignatureProduct,
   financialIdCheckProduct,
   geoDistanceProduct,
+  markdownToHtmlProduct,
 ];
 
 // Descripciones en español para la página /es — el resto de la superficie
@@ -53,6 +55,7 @@ const ES_DESCRIPTIONS: Record<string, string> = {
   "verify-signature": "Recupera el firmante de una firma EIP-191 o EIP-712 y la compara contra una dirección declarada.",
   "financial-id-check": "Valida un IBAN (checksum mod-97), un BIC/SWIFT (formato ISO 9362), o un número de tarjeta (checksum de Luhn).",
   "geo-distance": "Calcula la distancia ortodrómica (km/mi) y el rumbo inicial entre dos coordenadas lat/lng.",
+  "markdown-to-html": "Convierte Markdown a HTML — el sentido inverso de html-to-markdown.",
 };
 
 const PORT = Number(process.env.PORT ?? 4021);
