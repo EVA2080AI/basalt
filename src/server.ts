@@ -15,6 +15,7 @@ import { sslCheckProduct } from "./projects/ssl-check/product.js";
 import { languageDetectProduct } from "./projects/language-detect/product.js";
 import { jsonValidateProduct } from "./projects/json-validate/product.js";
 import { verifySignatureProduct } from "./projects/verify-signature/product.js";
+import { financialIdCheckProduct } from "./projects/financial-id-check/product.js";
 
 /**
  * Un solo servidor para todos los productos de Basalt. Agregar el producto
@@ -31,6 +32,7 @@ const PRODUCTS: Product[] = [
   languageDetectProduct,
   jsonValidateProduct,
   verifySignatureProduct,
+  financialIdCheckProduct,
 ];
 
 // Descripciones en español para la página /es — el resto de la superficie
@@ -47,6 +49,7 @@ const ES_DESCRIPTIONS: Record<string, string> = {
   "language-detect": "Detecta el idioma de un texto (186 idiomas soportados), con el top 3 más probable.",
   "json-validate": "Valida un payload JSON contra un JSON Schema y devuelve los errores exactos.",
   "verify-signature": "Recupera el firmante de una firma EIP-191 o EIP-712 y la compara contra una dirección declarada.",
+  "financial-id-check": "Valida un IBAN (checksum mod-97), un BIC/SWIFT (formato ISO 9362), o un número de tarjeta (checksum de Luhn).",
 };
 
 const PORT = Number(process.env.PORT ?? 4021);
@@ -67,6 +70,27 @@ async function main() {
         `<rect width="64" height="64" rx="14" fill="#2b2a28"/>` +
         `<text x="32" y="44" font-family="system-ui,-apple-system,sans-serif" font-size="34" font-weight="700" fill="#e3e5e2" text-anchor="middle">B</text>` +
         `</svg>`,
+    );
+  });
+
+  // Sin restricciones: Basalt existe para que crawlers y agentes lo encuentren.
+  app.get("/robots.txt", (_req, res) => res.type("text/plain").send("User-agent: *\nAllow: /\n"));
+
+  // llms.txt (llmstxt.org): convención que agentes basados en LLM leen directo
+  // para entender un sitio sin tener que parsear HTML — barato de mantener
+  // porque se genera del mismo PRODUCTS que todo lo demás.
+  app.get("/llms.txt", (_req, res) => {
+    const toolLines = PRODUCTS.map((p) => `- ${p.method} ${p.path} ($${p.priceUsd}): ${p.description}`).join("\n");
+    res.type("text/plain").send(
+      `# Basalt\n\n` +
+        `> Autonomous economic agent selling ${PRODUCTS.length} pay-per-call utility tools to other AI agents, charging USDC via x402 on Base.\n\n` +
+        `Basalt is a resource server, not a marketing site: call any endpoint below unpaid first to receive an HTTP 402 challenge with the exact price, then retry with a valid x402 payment signature. All endpoints are POST with a JSON body.\n\n` +
+        `## Discovery\n\n` +
+        `- [OpenAPI](/openapi.json): canonical machine-readable contract — full request/response schemas and examples for every endpoint.\n` +
+        `- [x402 manifest](/.well-known/x402.json): x402 Foundation discovery draft format.\n` +
+        `- [Catalog](/products): free JSON list of tools, prices, and launch dates.\n\n` +
+        `## Tools\n\n${toolLines}\n\n` +
+        `## Contact\n\n- Email: sebastian689@gmail.com\n`,
     );
   });
 
@@ -163,7 +187,7 @@ async function main() {
             dek: `An autonomous economic agent. Sells the following to other agents, charging per call via <a href="https://x402.org">x402</a>/USDC on Base:`,
             cycles: `Shipped in ${CYCLES.length} cycles since ${CYCLES[0]} — new tools land as separate cycles, never a rewrite of what's live.`,
             th: ["Endpoint", "Price", "Shipped", "What it does"],
-            links: `<a href="/products">JSON catalog</a> · <a href="/health">Status</a> · <a href="/es">Español</a>`,
+            links: `<a href="/products">JSON catalog</a> · <a href="/llms.txt">llms.txt</a> · <a href="/health">Status</a> · <a href="/es">Español</a>`,
           }
         : {
             title: "Basalt",
@@ -171,7 +195,7 @@ async function main() {
             dek: `Agente económico autónomo. Vende lo siguiente a otros agentes, cobrando por uso vía <a href="https://x402.org">x402</a>/USDC sobre Base:`,
             cycles: `Lanzado en ${CYCLES.length} ciclos desde ${CYCLES[0]} — cada herramienta nueva es un ciclo aparte, nunca una reescritura de lo que ya está en producción.`,
             th: ["Endpoint", "Precio", "Lanzado", "Qué hace"],
-            links: `<a href="/products">Catálogo en JSON</a> · <a href="/health">Estado</a> · <a href="/">English</a>`,
+            links: `<a href="/products">Catálogo en JSON</a> · <a href="/llms.txt">llms.txt</a> · <a href="/health">Estado</a> · <a href="/">English</a>`,
           };
 
     const rows = PRODUCTS.map((p) => {
