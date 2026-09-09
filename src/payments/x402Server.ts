@@ -43,6 +43,10 @@ export interface ProductRoute {
   inputSchema?: Record<string, unknown>;
   /** Ejemplo real de body válido — el bazaar de x402 lo exige junto al schema. */
   inputExample?: Record<string, unknown>;
+  /** Forma de la respuesta 200 — sin esto, x402scan marca cada ruta con SCHEMA_OUTPUT_MISSING. */
+  outputSchema?: Record<string, unknown>;
+  /** Ejemplo real de respuesta 200 — @x402/extensions descarta outputSchema si falta esto. */
+  outputExample?: Record<string, unknown>;
 }
 
 /**
@@ -70,8 +74,17 @@ export function buildRoutes(products: ProductRoute[], payToAddress: string): Rou
       // forma que se nos ocurrió primero salía "malformed" al arrancar).
       extensions:
         p.method === "GET"
-          ? declareDiscoveryExtension({ input: p.inputExample, inputSchema: p.inputSchema })
-          : declareDiscoveryExtension({ bodyType: "json", input: p.inputExample, inputSchema: p.inputSchema }),
+          ? declareDiscoveryExtension({
+              input: p.inputExample,
+              inputSchema: p.inputSchema,
+              output: p.outputExample ? { example: p.outputExample, schema: p.outputSchema } : undefined,
+            })
+          : declareDiscoveryExtension({
+              bodyType: "json",
+              input: p.inputExample,
+              inputSchema: p.inputSchema,
+              output: p.outputExample ? { example: p.outputExample, schema: p.outputSchema } : undefined,
+            }),
     };
   }
   return routes;

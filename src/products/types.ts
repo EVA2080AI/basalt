@@ -16,5 +16,7 @@ export interface Product {
   inputExample?: Record<string, unknown>;
   /** Forma de la respuesta 200 — se publica en /openapi.json para x402scan. */
   outputSchema?: Record<string, unknown>;
+  /** Ejemplo real de respuesta 200 — sin esto, el bazaar de x402 descarta outputSchema entero. */
+  outputExample?: Record<string, unknown>;
   handler: (req: Request, res: Response) => Promise<void> | void;
 }

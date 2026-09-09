@@ -24,6 +24,15 @@ export const languageDetectProduct: Product = {
     },
     required: ["language", "confident"],
   },
+  outputExample: {
+    language: "spa",
+    confident: true,
+    candidates: [
+      { code: "spa", score: 0.99 },
+      { code: "cat", score: 0.006 },
+      { code: "por", score: 0.002 },
+    ],
+  },
   handler(req, res) {
     const text = req.body?.text;
     if (typeof text !== "string" || text.trim().length === 0) {

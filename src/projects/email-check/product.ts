@@ -21,6 +21,14 @@ export const emailCheckProduct: Product = {
     },
     required: ["email", "validSyntax", "deliverable"],
   },
+  outputExample: {
+    email: "hello@example.com",
+    validSyntax: true,
+    domain: "example.com",
+    hasMxRecords: true,
+    mxHosts: ["mail.example.com"],
+    deliverable: true,
+  },
   async handler(req, res) {
     const email = req.body?.email;
     if (typeof email !== "string") {

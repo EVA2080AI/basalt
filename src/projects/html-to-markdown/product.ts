@@ -20,6 +20,7 @@ export const htmlToMarkdownProduct: Product = {
   inputSchema: { type: "object", required: ["html"], properties: { html: { type: "string" } } },
   inputExample: { html: "<h1>Hola</h1><p>Mundo</p>" },
   outputSchema: { type: "object", properties: { markdown: { type: "string" } }, required: ["markdown"] },
+  outputExample: { markdown: "# Hola\n\nMundo" },
   handler(req, res) {
     const html = req.body?.html;
     if (typeof html !== "string") {

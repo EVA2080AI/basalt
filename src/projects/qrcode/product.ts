@@ -17,6 +17,10 @@ export const qrcodeProduct: Product = {
   inputSchema: { type: "object", required: ["text"], properties: { text: { type: "string" } } },
   inputExample: { text: "https://basalt-n6lt.onrender.com" },
   outputSchema: { type: "object", properties: { text: { type: "string" }, image: { type: "string" } }, required: ["text", "image"] },
+  outputExample: {
+    text: "https://basalt-n6lt.onrender.com",
+    image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+  },
   async handler(req, res) {
     const text = req.body?.text;
     if (typeof text !== "string" || text.length === 0) {

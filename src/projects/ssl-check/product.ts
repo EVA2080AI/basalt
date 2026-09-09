@@ -23,6 +23,16 @@ export const sslCheckProduct: Product = {
     },
     required: ["domain", "valid", "validTo"],
   },
+  outputExample: {
+    domain: "example.com",
+    valid: true,
+    issuer: "DigiCert Inc",
+    subject: "example.com",
+    validFrom: "2025-01-01T00:00:00Z",
+    validTo: "2026-01-01T00:00:00Z",
+    daysUntilExpiry: 114,
+    expired: false,
+  },
   async handler(req, res) {
     const domain = req.body?.domain;
     if (typeof domain !== "string") {

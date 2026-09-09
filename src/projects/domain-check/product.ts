@@ -21,6 +21,14 @@ export const domainCheckProduct: Product = {
     },
     required: ["domain", "available"],
   },
+  outputExample: {
+    domain: "example.com",
+    available: false,
+    registrar: "RESERVED-Internet Assigned Numbers Authority",
+    createdAt: "1995-08-14T04:00:00Z",
+    expiresAt: "2026-08-13T04:00:00Z",
+    status: ["active"],
+  },
   async handler(req, res) {
     const domain = req.body?.domain;
     if (typeof domain !== "string") {

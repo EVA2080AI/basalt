@@ -20,6 +20,12 @@ export const pdfExtractProduct: Product = {
     properties: { url: { type: "string" }, pages: { type: "number" }, text: { type: "string" }, truncated: { type: "boolean" } },
     required: ["url", "pages", "text"],
   },
+  outputExample: {
+    url: "https://bitcoin.org/bitcoin.pdf",
+    pages: 9,
+    text: "Bitcoin: A Peer-to-Peer Electronic Cash System\n\nSatoshi Nakamoto\nsatoshin@gmx.com\n...",
+    truncated: false,
+  },
   async handler(req, res) {
     const url = req.body?.url;
     if (typeof url !== "string") {

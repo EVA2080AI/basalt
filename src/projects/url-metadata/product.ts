@@ -22,6 +22,15 @@ export const urlMetadataProduct: Product = {
     },
     required: ["url", "textExcerpt"],
   },
+  outputExample: {
+    url: "https://example.com",
+    title: "Example Domain",
+    description: "Example Domain para usar en ejemplos ilustrativos.",
+    image: null,
+    siteName: "Example",
+    canonicalUrl: "https://example.com",
+    textExcerpt: "This domain is for use in illustrative examples in documents.",
+  },
   async handler(req, res) {
     const targetUrl = req.body?.url;
     if (typeof targetUrl !== "string") {

@@ -40,6 +40,16 @@ async function main() {
 
   app.get("/health", (_req, res) => res.json({ status: "ok", network: DEFAULT_POLICY.network }));
 
+  // Favicon: sin esto, el auditor de x402scan marca FAVICON_MISSING en cada ruta.
+  app.get("/favicon.svg", (_req, res) => {
+    res.type("image/svg+xml").send(
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">` +
+        `<rect width="64" height="64" rx="14" fill="#2b2a28"/>` +
+        `<text x="32" y="44" font-family="system-ui,-apple-system,sans-serif" font-size="34" font-weight="700" fill="#e3e5e2" text-anchor="middle">B</text>` +
+        `</svg>`,
+    );
+  });
+
   // Catálogo público y gratuito: cómo otros agentes descubren qué vende Basalt.
   app.get("/products", (_req, res) => {
     res.json(
@@ -112,6 +122,7 @@ async function main() {
         description: `Agente económico autónomo — ${PRODUCTS.length} herramientas pagas para otros agentes de IA, cobrando en USDC vía x402 sobre Base.`,
         "x-guidance":
           "Basalt vende herramientas de utilidad a agentes de IA, una por endpoint. Cada ruta cobra en USDC (Base) vía x402 antes de responder. Llama primero sin pago para recibir el challenge 402 con el precio exacto; luego reintenta con la firma de pago. Todos los endpoints son POST con body JSON, ver requestBody de cada operación para el schema exacto.",
+        contact: { email: "sebastian689@gmail.com" },
       },
       paths,
     });
@@ -125,6 +136,7 @@ async function main() {
     const description = `Basalt vende ${PRODUCTS.length} herramientas a otros agentes de IA, cobrando por uso en USDC vía x402 sobre Base.`;
     res.type("html").send(`<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><title>Basalt</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <meta name="description" content="${description}">
 <meta property="og:title" content="Basalt">
 <meta property="og:description" content="${description}">
