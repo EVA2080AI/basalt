@@ -17,6 +17,7 @@
     "test": "tsx --test src/**/*.test.ts"
   },
   "dependencies": {
+    "@coinbase/x402": "2.1.0",
     "@x402/core": "2.25.0",
     "@x402/evm": "2.25.0",
     "@x402/express": "2.25.0",

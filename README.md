@@ -65,6 +65,19 @@ El repo trae `render.yaml` listo para un despliegue tipo Blueprint:
 
 **Limitación conocida:** en el plan free, el ledger de gasto y las aprobaciones pendientes (`~/.automaton/ledger.json` / `approvals.json`) tampoco persisten entre despliegues — solo la identidad (la wallet) sobrevive, vía la variable de entorno. Para que el historial de gasto sobreviva un redeploy hace falta un disco persistente (plan pago) o una base de datos real — pendiente para cuando el volumen lo justifique.
 
+## Mainnet real requiere un facilitator distinto
+
+El facilitator público gratuito (`https://x402.org/facilitator`, el que se usa por defecto arriba) **solo soporta Base Sepolia**. Intentar mainnet con él falla al arrancar con `RouteConfigurationError: Facilitator does not support scheme "exact" on network "eip155:8453"` — confirmado en producción, no es un supuesto.
+
+Para Base mainnet, Basalt usa el **CDP Facilitator de Coinbase Developer Platform** (`@coinbase/x402`) automáticamente en cuanto detecta credenciales:
+
+```bash
+CDP_API_KEY_ID=...
+CDP_API_KEY_SECRET=...
+```
+
+Se obtienen creando una cuenta gratuita en [portal.cdp.coinbase.com](https://portal.cdp.coinbase.com) (gratis hasta 1,000 liquidaciones/mes). Sin credenciales de CDP, `AUTOMATON_ALLOW_MAINNET=true` falla al arrancar con un error propio y claro, en vez del error críptico de la librería — ver `src/payments/x402Server.ts`.
+
 ## Reglas de seguridad (no negociables en este repo)
 
 - **Mainnet nunca se activa por accidente.** Requiere `AUTOMATON_ALLOW_MAINNET=true` explícito, y una wallet de mainnet no se crea sin `AUTOMATON_WALLET_PASSPHRASE` — nunca se guarda una clave con dinero real sin cifrar.

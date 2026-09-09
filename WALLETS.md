@@ -33,10 +33,20 @@ Lección aplicada: `src/wallet/wallet.ts` ahora sanea (espacios, comillas, prefi
 
 | Dirección | Dónde vive la clave | Balance real |
 |---|---|---|
-| `0x1816489D28C8C9fD2EdE2d38B1A52EedA54e8FDb` | `~/.automaton/wallet.base.json`, cifrada con `AUTOMATON_WALLET_PASSPHRASE` (elegida por el usuario, nunca compartida con el agente) | **47.82132 USDC** (fondeado desde Binance vía retiro a red Base, 2026-09-09) |
+| `0x1816489D28C8C9fD2EdE2d38B1A52EedA54e8FDb` | `~/.automaton/wallet.base.json`. Render: variable de entorno `AUTOMATON_PRIVATE_KEY`. | **47.82132 USDC** (fondeado desde Binance vía retiro a red Base, 2026-09-09) |
 
 [Ver en BaseScan](https://basescan.org/address/0x1816489D28C8C9fD2EdE2d38B1A52EedA54e8FDb).
 
-Esta wallet **no está conectada a ningún servidor todavía** — ni local ni Render la usan. `AUTOMATON_ALLOW_MAINNET` sigue sin activarse en ningún entorno. Activarlo es una decisión aparte, deliberada, que cambia la red de cobro de los 5 productos de testnet a mainnet — no algo que deba pasar como efecto secundario de fondear la wallet.
-
 Verificación antes de fondear: dirección, red (Base) y contrato de USDC (`...02913`, el oficial) confirmados carácter por carácter contra la pantalla de retiro de Binance antes de que el usuario confirmara. Balance neto verificado directo on-chain, no solo en el historial de Binance.
+
+### ⚠️ Contraseña de cifrado comprometida — migración pendiente
+
+Al crear esta wallet, el usuario corrió el comando de ejemplo tal cual se le dio, sin reemplazar el placeholder `tu-contraseña-elegida` por una contraseña propia — así que esa frase literal, que apareció varias veces en esta conversación, es la contraseña real que cifra el archivo local. Confirmado técnicamente (sin exponer la clave privada): esa frase sí desbloquea `wallet.base.json`.
+
+**Decisión del usuario:** seguir usando esta wallet mientras se termina de armar la infraestructura, y migrar a una wallet nueva (con una contraseña real, nunca compartida con el agente) más adelante. Hasta que eso ocurra, tratar los 47.82 USDC de esta dirección como si la contraseña no ofreciera protección real — es dinero expuesto a quien tenga acceso a esta conversación y al archivo local.
+
+### Facilitator: el público no sirve para mainnet
+
+Al intentar activar mainnet la primera vez, el deploy falló con `RouteConfigurationError: Facilitator does not support scheme "exact" on network "eip155:8453"`. El facilitator gratuito de `x402.org` (usado hasta ahora) solo soporta Base Sepolia — el propio repo oficial de x402 lo advierte explícitamente para mainnet. Se decidió usar el **CDP Facilitator de Coinbase Developer Platform** (`@coinbase/x402`, ver `src/payments/x402Server.ts`), el único con soporte oficial, documentado y con cumplimiento KYT/OFAC para Base mainnet. Requiere `CDP_API_KEY_ID` y `CDP_API_KEY_SECRET` (cuenta gratuita en portal.cdp.coinbase.com) — variables nuevas en `render.yaml`, pendientes de que el usuario las genere y las pegue en Render.
+
+`AUTOMATON_ALLOW_MAINNET` sigue en `false` en `render.yaml` hasta terminar de validar el facilitator de CDP en testnet primero (ver el plan de verificación del momento en que se activó).

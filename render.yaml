@@ -19,3 +19,7 @@ services:
         value: "2"
       - key: AUTOMATON_FACILITATOR_URL
         value: "https://x402.org/facilitator"
+      - key: CDP_API_KEY_ID
+        sync: false
+      - key: CDP_API_KEY_SECRET
+        sync: false
