@@ -18,5 +18,7 @@ export interface Product {
   outputSchema?: Record<string, unknown>;
   /** Ejemplo real de respuesta 200 — sin esto, el bazaar de x402 descarta outputSchema entero. */
   outputExample?: Record<string, unknown>;
+  /** Fecha (YYYY-MM-DD) en que el producto salió a producción — traza en qué ciclo nació cada uno. */
+  launchedAt: string;
   handler: (req: Request, res: Response) => Promise<void> | void;
 }

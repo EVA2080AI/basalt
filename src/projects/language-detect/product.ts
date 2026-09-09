@@ -12,9 +12,10 @@ export const languageDetectProduct: Product = {
   method: "POST",
   path: "/language-detect",
   priceUsd: Number(process.env.AUTOMATON_PRICE_LANGUAGE_DETECT_USD ?? 0.002),
-  description: "Detecta el idioma de un texto (186 idiomas soportados), con el top 3 más probable.",
+  description: "Detects the language of a text (186 languages supported), returning the top 3 most likely matches.",
+  launchedAt: "2026-09-09",
   inputSchema: { type: "object", required: ["text"], properties: { text: { type: "string" } } },
-  inputExample: { text: "Hola, esto es una prueba." },
+  inputExample: { text: "Hello, this is a test." },
   outputSchema: {
     type: "object",
     properties: {
@@ -25,18 +26,18 @@ export const languageDetectProduct: Product = {
     required: ["language", "confident"],
   },
   outputExample: {
-    language: "spa",
+    language: "eng",
     confident: true,
     candidates: [
-      { code: "spa", score: 0.99 },
-      { code: "cat", score: 0.006 },
-      { code: "por", score: 0.002 },
+      { code: "eng", score: 0.98 },
+      { code: "sco", score: 0.01 },
+      { code: "gla", score: 0.005 },
     ],
   },
   handler(req, res) {
     const text = req.body?.text;
     if (typeof text !== "string" || text.trim().length === 0) {
-      res.status(400).json({ error: "Body debe incluir { text: string }" });
+      res.status(400).json({ error: "Body must include { text: string }" });
       return;
     }
     try {
@@ -48,7 +49,7 @@ export const languageDetectProduct: Product = {
         candidates: candidates.map(([code, score]) => ({ code, score })),
       });
     } catch (err) {
-      res.status(422).json({ error: err instanceof Error ? err.message : "No se pudo detectar el idioma." });
+      res.status(422).json({ error: err instanceof Error ? err.message : "Could not detect the language." });
     }
   },
 };

@@ -12,7 +12,8 @@ export const pdfExtractProduct: Product = {
   method: "POST",
   path: "/pdf-extract",
   priceUsd: Number(process.env.AUTOMATON_PRICE_PDF_EXTRACT_USD ?? 0.01),
-  description: "Extrae el texto de un PDF dado por URL.",
+  description: "Extracts the text from a PDF given its URL.",
+  launchedAt: "2026-09-09",
   inputSchema: { type: "object", required: ["url"], properties: { url: { type: "string", format: "uri" } } },
   inputExample: { url: "https://bitcoin.org/bitcoin.pdf" },
   outputSchema: {
@@ -29,7 +30,7 @@ export const pdfExtractProduct: Product = {
   async handler(req, res) {
     const url = req.body?.url;
     if (typeof url !== "string") {
-      res.status(400).json({ error: "Body debe incluir { url: string }" });
+      res.status(400).json({ error: "Body must include { url: string }" });
       return;
     }
 
@@ -44,7 +45,7 @@ export const pdfExtractProduct: Product = {
         truncated: result.text.length > MAX_TEXT_CHARS,
       });
     } catch (err) {
-      res.status(422).json({ error: err instanceof Error ? err.message : "No se pudo extraer el texto del PDF." });
+      res.status(422).json({ error: err instanceof Error ? err.message : "Could not extract text from the PDF." });
     } finally {
       await parser?.destroy();
     }

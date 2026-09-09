@@ -13,6 +13,7 @@ import { qrcodeProduct } from "./projects/qrcode/product.js";
 import { pdfExtractProduct } from "./projects/pdf-extract/product.js";
 import { sslCheckProduct } from "./projects/ssl-check/product.js";
 import { languageDetectProduct } from "./projects/language-detect/product.js";
+import { jsonValidateProduct } from "./projects/json-validate/product.js";
 
 /**
  * Un solo servidor para todos los productos de Basalt. Agregar el producto
@@ -27,7 +28,23 @@ const PRODUCTS: Product[] = [
   pdfExtractProduct,
   sslCheckProduct,
   languageDetectProduct,
+  jsonValidateProduct,
 ];
+
+// Descripciones en español para la página /es — el resto de la superficie
+// (API, OpenAPI, /products) está en inglés a propósito: es el idioma que
+// habla el ecosistema x402 (directorios, facilitators, otros agentes).
+const ES_DESCRIPTIONS: Record<string, string> = {
+  "url-metadata": "Extrae título, descripción, imagen y texto limpio de una URL — pensado para que otros agentes lo consuman.",
+  "domain-check": "Revisa si un dominio está disponible para registrar vía RDAP, o quién lo tiene y cuándo vence si no lo está.",
+  "email-check": "Valida sintaxis de un email y confirma registros MX reales del dominio — filtra direcciones que no pueden recibir correo.",
+  "html-to-markdown": "Convierte HTML a Markdown limpio — para que un agente no tenga que implementar su propio conversor.",
+  qrcode: "Genera un código QR (PNG en base64) para un texto o URL.",
+  "pdf-extract": "Extrae el texto de un PDF dado por URL.",
+  "ssl-check": "Revisa el certificado TLS de un dominio: validez, emisor, y días hasta que vence.",
+  "language-detect": "Detecta el idioma de un texto (186 idiomas soportados), con el top 3 más probable.",
+  "json-validate": "Valida un payload JSON contra un JSON Schema y devuelve los errores exactos.",
+};
 
 const PORT = Number(process.env.PORT ?? 4021);
 
@@ -59,6 +76,7 @@ async function main() {
         path: p.path,
         priceUsd: p.priceUsd,
         description: p.description,
+        launchedAt: p.launchedAt,
       })),
     );
   });
@@ -92,6 +110,7 @@ async function main() {
           summary: `Basalt — ${p.id}`,
           description: p.description,
           tags: ["basalt"],
+          "x-launched": p.launchedAt,
           "x-payment-info": {
             price: { mode: "fixed", currency: "USD", amount: p.priceUsd.toFixed(6) },
             protocols: [{ x402: {} }],
@@ -119,9 +138,9 @@ async function main() {
       info: {
         title: "Basalt",
         version: "0.1.0",
-        description: `Agente económico autónomo — ${PRODUCTS.length} herramientas pagas para otros agentes de IA, cobrando en USDC vía x402 sobre Base.`,
+        description: `Autonomous economic agent — ${PRODUCTS.length} paid tools for other AI agents, charging in USDC via x402 on Base.`,
         "x-guidance":
-          "Basalt vende herramientas de utilidad a agentes de IA, una por endpoint. Cada ruta cobra en USDC (Base) vía x402 antes de responder. Llama primero sin pago para recibir el challenge 402 con el precio exacto; luego reintenta con la firma de pago. Todos los endpoints son POST con body JSON, ver requestBody de cada operación para el schema exacto.",
+          "Basalt sells utility tools to AI agents, one per endpoint. Each route charges USDC (Base) via x402 before responding. Call it unpaid first to get the 402 challenge with the exact price, then retry with the payment signature. All endpoints are POST with a JSON body — see each operation's requestBody for the exact schema.",
         contact: { email: "sebastian689@gmail.com" },
       },
       paths,
@@ -129,37 +148,66 @@ async function main() {
   });
 
   // Página de inicio: para un humano que llega a la URL raíz, no solo para agentes.
-  app.get("/", (_req, res) => {
-    const rows = PRODUCTS.map(
-      (p) => `<tr><td><code>${p.method} ${p.path}</code></td><td>$${p.priceUsd} USDC</td><td>${p.description}</td></tr>`,
-    ).join("");
-    const description = `Basalt vende ${PRODUCTS.length} herramientas a otros agentes de IA, cobrando por uso en USDC vía x402 sobre Base.`;
-    res.type("html").send(`<!doctype html>
-<html lang="es"><head><meta charset="utf-8"><title>Basalt</title>
+  // Inglés por defecto (idioma del ecosistema x402); /es sirve la versión en español.
+  const CYCLES = [...new Set(PRODUCTS.map((p) => p.launchedAt))].sort();
+
+  function renderLandingPage(lang: "en" | "es") {
+    const copy =
+      lang === "en"
+        ? {
+            title: "Basalt",
+            description: `Basalt sells ${PRODUCTS.length} tools to other AI agents, charging per call in USDC via x402 on Base.`,
+            dek: `An autonomous economic agent. Sells the following to other agents, charging per call via <a href="https://x402.org">x402</a>/USDC on Base:`,
+            cycles: `Shipped in ${CYCLES.length} cycles since ${CYCLES[0]} — new tools land as separate cycles, never a rewrite of what's live.`,
+            th: ["Endpoint", "Price", "Shipped", "What it does"],
+            links: `<a href="/products">JSON catalog</a> · <a href="/health">Status</a> · <a href="/es">Español</a>`,
+          }
+        : {
+            title: "Basalt",
+            description: `Basalt vende ${PRODUCTS.length} herramientas a otros agentes de IA, cobrando por uso en USDC vía x402 sobre Base.`,
+            dek: `Agente económico autónomo. Vende lo siguiente a otros agentes, cobrando por uso vía <a href="https://x402.org">x402</a>/USDC sobre Base:`,
+            cycles: `Lanzado en ${CYCLES.length} ciclos desde ${CYCLES[0]} — cada herramienta nueva es un ciclo aparte, nunca una reescritura de lo que ya está en producción.`,
+            th: ["Endpoint", "Precio", "Lanzado", "Qué hace"],
+            links: `<a href="/products">Catálogo en JSON</a> · <a href="/health">Estado</a> · <a href="/">English</a>`,
+          };
+
+    const rows = PRODUCTS.map((p) => {
+      const desc = lang === "es" ? (ES_DESCRIPTIONS[p.id] ?? p.description) : p.description;
+      return `<tr><td><code>${p.method} ${p.path}</code></td><td>$${p.priceUsd} USDC</td><td>${p.launchedAt}</td><td>${desc}</td></tr>`;
+    }).join("");
+
+    return `<!doctype html>
+<html lang="${lang}"><head><meta charset="utf-8"><title>${copy.title}</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<meta name="description" content="${description}">
+<meta name="description" content="${copy.description}">
 <meta property="og:title" content="Basalt">
-<meta property="og:description" content="${description}">
+<meta property="og:description" content="${copy.description}">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://basalt-n6lt.onrender.com">
+<meta property="og:url" content="https://basalt-n6lt.onrender.com${lang === "es" ? "/es" : ""}">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Basalt">
-<meta name="twitter:description" content="${description}">
+<meta name="twitter:description" content="${copy.description}">
 <style>
-  body{font-family:-apple-system,sans-serif;max-width:720px;margin:60px auto;padding:0 20px;color:#1b1b1f;background:#edefee}
+  body{font-family:-apple-system,sans-serif;max-width:760px;margin:60px auto;padding:0 20px;color:#1b1b1f;background:#edefee}
   h1{font-size:2rem;margin-bottom:4px} p.dek{color:#4b4b52}
+  p.cycles{color:#7a7a72;font-size:13px;margin-top:8px}
   table{width:100%;border-collapse:collapse;margin-top:24px;font-size:14px}
   th,td{text-align:left;padding:10px 12px;border-bottom:1px solid #d3d5d1}
+  th:nth-child(3),td:nth-child(3){color:#7a7a72;white-space:nowrap}
   code{font-family:monospace;background:#e3e5e2;padding:2px 6px;border-radius:4px}
   a{color:#6e3f1c}
 </style></head>
 <body>
-  <h1>Basalt</h1>
-  <p class="dek">Agente económico autónomo. Vende lo siguiente a otros agentes, cobrando por uso vía <a href="https://x402.org">x402</a>/USDC sobre Base:</p>
-  <table><thead><tr><th>Endpoint</th><th>Precio</th><th>Qué hace</th></tr></thead><tbody>${rows}</tbody></table>
-  <p style="margin-top:24px"><a href="/products">Catálogo en JSON</a> · <a href="/health">Estado</a></p>
-</body></html>`);
-  });
+  <h1>${copy.title}</h1>
+  <p class="dek">${copy.dek}</p>
+  <p class="cycles">${copy.cycles}</p>
+  <table><thead><tr><th>${copy.th[0]}</th><th>${copy.th[1]}</th><th>${copy.th[2]}</th><th>${copy.th[3]}</th></tr></thead><tbody>${rows}</tbody></table>
+  <p style="margin-top:24px">${copy.links}</p>
+</body></html>`;
+  }
+
+  app.get("/", (_req, res) => res.type("html").send(renderLandingPage("en")));
+  app.get("/es", (_req, res) => res.type("html").send(renderLandingPage("es")));
 
   const resourceServer = createResourceServer();
   const routes = buildRoutes(PRODUCTS, wallet.address);

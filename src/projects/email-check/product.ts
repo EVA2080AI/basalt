@@ -6,7 +6,8 @@ export const emailCheckProduct: Product = {
   method: "POST",
   path: "/email-check",
   priceUsd: Number(process.env.AUTOMATON_PRICE_EMAIL_CHECK_USD ?? 0.005),
-  description: "Valida sintaxis de un email y confirma registros MX reales del dominio — filtra direcciones que no pueden recibir correo.",
+  description: "Validates email syntax and confirms real MX records for the domain — filters out addresses that can't receive mail.",
+  launchedAt: "2026-09-08",
   inputSchema: { type: "object", required: ["email"], properties: { email: { type: "string", format: "email" } } },
   inputExample: { email: "hello@example.com" },
   outputSchema: {
@@ -32,14 +33,14 @@ export const emailCheckProduct: Product = {
   async handler(req, res) {
     const email = req.body?.email;
     if (typeof email !== "string") {
-      res.status(400).json({ error: "Body debe incluir { email: string }" });
+      res.status(400).json({ error: "Body must include { email: string }" });
       return;
     }
     try {
       const result = await checkEmail(email);
       res.json(result);
     } catch (err) {
-      res.status(422).json({ error: err instanceof Error ? err.message : "Error desconocido" });
+      res.status(422).json({ error: err instanceof Error ? err.message : "Unknown error" });
     }
   },
 };

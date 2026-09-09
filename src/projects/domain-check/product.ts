@@ -6,7 +6,8 @@ export const domainCheckProduct: Product = {
   method: "POST",
   path: "/domain-check",
   priceUsd: Number(process.env.AUTOMATON_PRICE_DOMAIN_CHECK_USD ?? 0.01),
-  description: "Revisa si un dominio está disponible para registrar vía RDAP, o quién lo tiene y cuándo vence si no lo está.",
+  description: "Checks whether a domain is available to register via RDAP, or who owns it and when it expires if not.",
+  launchedAt: "2026-09-08",
   inputSchema: { type: "object", required: ["domain"], properties: { domain: { type: "string" } } },
   inputExample: { domain: "example.com" },
   outputSchema: {
@@ -32,14 +33,14 @@ export const domainCheckProduct: Product = {
   async handler(req, res) {
     const domain = req.body?.domain;
     if (typeof domain !== "string") {
-      res.status(400).json({ error: "Body debe incluir { domain: string }" });
+      res.status(400).json({ error: "Body must include { domain: string }" });
       return;
     }
     try {
       const result = await checkDomain(domain);
       res.json(result);
     } catch (err) {
-      res.status(422).json({ error: err instanceof Error ? err.message : "Error desconocido" });
+      res.status(422).json({ error: err instanceof Error ? err.message : "Unknown error" });
     }
   },
 };

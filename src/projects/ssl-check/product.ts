@@ -6,7 +6,8 @@ export const sslCheckProduct: Product = {
   method: "POST",
   path: "/ssl-check",
   priceUsd: Number(process.env.AUTOMATON_PRICE_SSL_CHECK_USD ?? 0.005),
-  description: "Revisa el certificado TLS de un dominio: validez, emisor, y días hasta que vence.",
+  description: "Checks a domain's TLS certificate: validity, issuer, and days until expiry.",
+  launchedAt: "2026-09-09",
   inputSchema: { type: "object", required: ["domain"], properties: { domain: { type: "string" } } },
   inputExample: { domain: "example.com" },
   outputSchema: {
@@ -36,14 +37,14 @@ export const sslCheckProduct: Product = {
   async handler(req, res) {
     const domain = req.body?.domain;
     if (typeof domain !== "string") {
-      res.status(400).json({ error: "Body debe incluir { domain: string }" });
+      res.status(400).json({ error: "Body must include { domain: string }" });
       return;
     }
     try {
       const result = await checkSsl(domain);
       res.json(result);
     } catch (err) {
-      res.status(422).json({ error: err instanceof Error ? err.message : "Error desconocido" });
+      res.status(422).json({ error: err instanceof Error ? err.message : "Unknown error" });
     }
   },
 };

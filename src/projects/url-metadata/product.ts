@@ -6,7 +6,8 @@ export const urlMetadataProduct: Product = {
   method: "POST",
   path: "/extract",
   priceUsd: Number(process.env.AUTOMATON_PRICE_URL_METADATA_USD ?? 0.005),
-  description: "Extrae título, descripción, imagen y texto limpio de una URL — pensado para que otros agentes lo consuman.",
+  description: "Extracts title, description, image, and clean text from a URL — built for other agents to consume.",
+  launchedAt: "2026-09-08",
   inputSchema: { type: "object", required: ["url"], properties: { url: { type: "string", format: "uri" } } },
   inputExample: { url: "https://example.com" },
   outputSchema: {
@@ -25,7 +26,7 @@ export const urlMetadataProduct: Product = {
   outputExample: {
     url: "https://example.com",
     title: "Example Domain",
-    description: "Example Domain para usar en ejemplos ilustrativos.",
+    description: "Example Domain for use in illustrative examples.",
     image: null,
     siteName: "Example",
     canonicalUrl: "https://example.com",
@@ -34,14 +35,14 @@ export const urlMetadataProduct: Product = {
   async handler(req, res) {
     const targetUrl = req.body?.url;
     if (typeof targetUrl !== "string") {
-      res.status(400).json({ error: "Body debe incluir { url: string }" });
+      res.status(400).json({ error: "Body must include { url: string }" });
       return;
     }
     try {
       const metadata = await extractUrlMetadata(targetUrl);
       res.json(metadata);
     } catch (err) {
-      res.status(422).json({ error: err instanceof Error ? err.message : "Error desconocido" });
+      res.status(422).json({ error: err instanceof Error ? err.message : "Unknown error" });
     }
   },
 };

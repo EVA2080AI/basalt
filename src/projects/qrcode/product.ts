@@ -13,7 +13,8 @@ export const qrcodeProduct: Product = {
   method: "POST",
   path: "/qrcode",
   priceUsd: Number(process.env.AUTOMATON_PRICE_QRCODE_USD ?? 0.002),
-  description: "Genera un código QR (PNG en base64) para un texto o URL.",
+  description: "Generates a QR code (PNG, base64) for a text string or URL.",
+  launchedAt: "2026-09-08",
   inputSchema: { type: "object", required: ["text"], properties: { text: { type: "string" } } },
   inputExample: { text: "https://basalt-n6lt.onrender.com" },
   outputSchema: { type: "object", properties: { text: { type: "string" }, image: { type: "string" } }, required: ["text", "image"] },
@@ -24,18 +25,18 @@ export const qrcodeProduct: Product = {
   async handler(req, res) {
     const text = req.body?.text;
     if (typeof text !== "string" || text.length === 0) {
-      res.status(400).json({ error: "Body debe incluir { text: string }" });
+      res.status(400).json({ error: "Body must include { text: string }" });
       return;
     }
     if (text.length > MAX_TEXT_CHARS) {
-      res.status(413).json({ error: `El texto supera el máximo de ${MAX_TEXT_CHARS} caracteres.` });
+      res.status(413).json({ error: `Text exceeds the maximum of ${MAX_TEXT_CHARS} characters.` });
       return;
     }
     try {
       const dataUrl = await QRCode.toDataURL(text, { errorCorrectionLevel: "M", margin: 2 });
       res.json({ text, image: dataUrl });
     } catch (err) {
-      res.status(422).json({ error: err instanceof Error ? err.message : "No se pudo generar el código QR." });
+      res.status(422).json({ error: err instanceof Error ? err.message : "Could not generate the QR code." });
     }
   },
 };
