@@ -29,6 +29,14 @@ La solución fue inyectar la clave real como secreto de la plataforma (`AUTOMATO
 
 Lección aplicada: `src/wallet/wallet.ts` ahora sanea (espacios, comillas, prefijo `0x`) cualquier valor que llegue por `AUTOMATON_PRIVATE_KEY` antes de usarlo, y separa los archivos de wallet por red — pero ninguna validación de código evita que un humano edite el archivo equivocado a mano. Tratar `~/.automaton/wallet.*.json` como se trataría cualquier archivo de claves: no abrirlo para "probar cosas", solo para leer el valor de `privateKey` cuando haga falta.
 
-## Cuando llegue el momento de mainnet
+## Mainnet — dinero real (Base)
 
-Ninguna de las direcciones de arriba sirve para eso — `AUTOMATON_ALLOW_MAINNET=true` exige una wallet nueva, y el código (`src/wallet/wallet.ts`) rechaza crearla sin `AUTOMATON_WALLET_PASSPHRASE`. Ese es un paso aparte, deliberado, que no se da por accidente.
+| Dirección | Dónde vive la clave | Balance real |
+|---|---|---|
+| `0x1816489D28C8C9fD2EdE2d38B1A52EedA54e8FDb` | `~/.automaton/wallet.base.json`, cifrada con `AUTOMATON_WALLET_PASSPHRASE` (elegida por el usuario, nunca compartida con el agente) | **47.82132 USDC** (fondeado desde Binance vía retiro a red Base, 2026-09-09) |
+
+[Ver en BaseScan](https://basescan.org/address/0x1816489D28C8C9fD2EdE2d38B1A52EedA54e8FDb).
+
+Esta wallet **no está conectada a ningún servidor todavía** — ni local ni Render la usan. `AUTOMATON_ALLOW_MAINNET` sigue sin activarse en ningún entorno. Activarlo es una decisión aparte, deliberada, que cambia la red de cobro de los 5 productos de testnet a mainnet — no algo que deba pasar como efecto secundario de fondear la wallet.
+
+Verificación antes de fondear: dirección, red (Base) y contrato de USDC (`...02913`, el oficial) confirmados carácter por carácter contra la pantalla de retiro de Binance antes de que el usuario confirmara. Balance neto verificado directo on-chain, no solo en el historial de Binance.
