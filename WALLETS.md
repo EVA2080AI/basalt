@@ -41,7 +41,7 @@ Verificación antes de fondear: dirección, red (Base) y contrato de USDC (`...0
 
 ### ⚠️ Contraseña de cifrado comprometida — migración pendiente
 
-Al crear esta wallet, el usuario corrió el comando de ejemplo tal cual se le dio, sin reemplazar el placeholder `tu-contraseña-elegida` por una contraseña propia — así que esa frase literal, que apareció varias veces en esta conversación, es la contraseña real que cifra el archivo local. Confirmado técnicamente (sin exponer la clave privada): esa frase sí desbloquea `wallet.base.json`.
+Al crear esta wallet, el usuario corrió el comando de ejemplo tal cual se le dio, sin reemplazar el texto de ejemplo de la contraseña por una propia — así que ese texto, que apareció varias veces en la conversación original, es la contraseña real que cifra el archivo local. Confirmado técnicamente en su momento (sin exponer la clave privada): ese texto sí desbloqueaba `wallet.base.json`. Deliberadamente no se repite aquí para no dejarlo citado en un archivo que podría hacerse público.
 
 **Decisión del usuario:** seguir usando esta wallet mientras se termina de armar la infraestructura, y migrar a una wallet nueva (con una contraseña real, nunca compartida con el agente) más adelante. Hasta que eso ocurra, tratar los 47.82 USDC de esta dirección como si la contraseña no ofreciera protección real — es dinero expuesto a quien tenga acceso a esta conversación y al archivo local.
 

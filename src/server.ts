@@ -75,8 +75,17 @@ async function main() {
     const rows = PRODUCTS.map(
       (p) => `<tr><td><code>${p.method} ${p.path}</code></td><td>$${p.priceUsd} USDC</td><td>${p.description}</td></tr>`,
     ).join("");
+    const description = `Basalt vende ${PRODUCTS.length} herramientas a otros agentes de IA, cobrando por uso en USDC vía x402 sobre Base.`;
     res.type("html").send(`<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><title>Basalt</title>
+<meta name="description" content="${description}">
+<meta property="og:title" content="Basalt">
+<meta property="og:description" content="${description}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://basalt-n6lt.onrender.com">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Basalt">
+<meta name="twitter:description" content="${description}">
 <style>
   body{font-family:-apple-system,sans-serif;max-width:720px;margin:60px auto;padding:0 20px;color:#1b1b1f;background:#edefee}
   h1{font-size:2rem;margin-bottom:4px} p.dek{color:#4b4b52}
