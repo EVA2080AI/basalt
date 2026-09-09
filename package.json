@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev:url-metadata": "tsx src/projects/url-metadata/server.ts",
+    "dev": "tsx src/server.ts",
     "wallet:init": "tsx src/wallet/cli.ts init",
     "wallet:info": "tsx src/wallet/cli.ts info",
     "governance:pending": "tsx src/governance/cli.ts pending",

@@ -11,17 +11,27 @@ export function createResourceServer() {
   return new x402ResourceServer(facilitator).register(DEFAULT_POLICY.network, new ExactEvmScheme());
 }
 
-export function buildRoute(route: string, payToAddress: string, priceUsd: number, description: string): RoutesConfig {
-  return {
-    [route]: {
+export interface ProductRoute {
+  method: "GET" | "POST";
+  path: string;
+  priceUsd: number;
+  description: string;
+}
+
+/** Combina las rutas de todos los productos de Basalt en una sola configuración x402. */
+export function buildRoutes(products: ProductRoute[], payToAddress: string): RoutesConfig {
+  const routes: RoutesConfig = {};
+  for (const p of products) {
+    routes[`${p.method} ${p.path}`] = {
       accepts: {
         scheme: "exact",
-        price: `$${priceUsd.toFixed(3)}`,
+        price: `$${p.priceUsd.toFixed(3)}`,
         network: DEFAULT_POLICY.network,
         payTo: payToAddress,
         maxTimeoutSeconds: 60,
       },
-      description,
-    },
-  };
+      description: p.description,
+    };
+  }
+  return routes;
 }
