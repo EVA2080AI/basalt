@@ -10,7 +10,7 @@ services:
       - key: AUTOMATON_PRIVATE_KEY
         sync: false
       - key: AUTOMATON_ALLOW_MAINNET
-        value: "false"
+        value: "true"
       - key: AUTOMATON_DAILY_CAP_USD
         value: "5"
       - key: AUTOMATON_PER_CALL_CAP_USD
