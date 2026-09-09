@@ -38,6 +38,29 @@ async function main() {
     );
   });
 
+  // Página de inicio: para un humano que llega a la URL raíz, no solo para agentes.
+  app.get("/", (_req, res) => {
+    const rows = PRODUCTS.map(
+      (p) => `<tr><td><code>${p.method} ${p.path}</code></td><td>$${p.priceUsd} USDC</td><td>${p.description}</td></tr>`,
+    ).join("");
+    res.type("html").send(`<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Basalt</title>
+<style>
+  body{font-family:-apple-system,sans-serif;max-width:720px;margin:60px auto;padding:0 20px;color:#1b1b1f;background:#edefee}
+  h1{font-size:2rem;margin-bottom:4px} p.dek{color:#4b4b52}
+  table{width:100%;border-collapse:collapse;margin-top:24px;font-size:14px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid #d3d5d1}
+  code{font-family:monospace;background:#e3e5e2;padding:2px 6px;border-radius:4px}
+  a{color:#6e3f1c}
+</style></head>
+<body>
+  <h1>Basalt</h1>
+  <p class="dek">Agente económico autónomo. Vende lo siguiente a otros agentes, cobrando por uso vía <a href="https://x402.org">x402</a>/USDC sobre Base:</p>
+  <table><thead><tr><th>Endpoint</th><th>Precio</th><th>Qué hace</th></tr></thead><tbody>${rows}</tbody></table>
+  <p style="margin-top:24px"><a href="/products">Catálogo en JSON</a> · <a href="/health">Estado</a></p>
+</body></html>`);
+  });
+
   const resourceServer = createResourceServer();
   const routes = buildRoutes(PRODUCTS, wallet.address);
   app.use(paymentMiddleware(routes, resourceServer));
