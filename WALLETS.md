@@ -47,6 +47,15 @@ Al crear esta wallet, el usuario corrió el comando de ejemplo tal cual se le di
 
 ### Facilitator: el público no sirve para mainnet
 
-Al intentar activar mainnet la primera vez, el deploy falló con `RouteConfigurationError: Facilitator does not support scheme "exact" on network "eip155:8453"`. El facilitator gratuito de `x402.org` (usado hasta ahora) solo soporta Base Sepolia — el propio repo oficial de x402 lo advierte explícitamente para mainnet. Se decidió usar el **CDP Facilitator de Coinbase Developer Platform** (`@coinbase/x402`, ver `src/payments/x402Server.ts`), el único con soporte oficial, documentado y con cumplimiento KYT/OFAC para Base mainnet. Requiere `CDP_API_KEY_ID` y `CDP_API_KEY_SECRET` (cuenta gratuita en portal.cdp.coinbase.com) — variables nuevas en `render.yaml`, pendientes de que el usuario las genere y las pegue en Render.
+Al intentar activar mainnet la primera vez, el deploy falló con `RouteConfigurationError: Facilitator does not support scheme "exact" on network "eip155:8453"`. El facilitator gratuito de `x402.org` (usado hasta ahora) solo soporta Base Sepolia — el propio repo oficial de x402 lo advierte explícitamente para mainnet. Se resolvió con el **CDP Facilitator de Coinbase Developer Platform** (`@coinbase/x402`, ver `src/payments/x402Server.ts`), con cumplimiento KYT/OFAC para Base mainnet. Requiere `CDP_API_KEY_ID` y `CDP_API_KEY_SECRET` (cuenta gratuita en portal.cdp.coinbase.com, API key generada con permisos mínimos: solo lectura, sin trade/transfer/export) — configuradas en Render.
 
-`AUTOMATON_ALLOW_MAINNET` sigue en `false` en `render.yaml` hasta terminar de validar el facilitator de CDP en testnet primero (ver el plan de verificación del momento en que se activó).
+### ✅ Mainnet activo — estado final (2026-09-09)
+
+`AUTOMATON_ALLOW_MAINNET=true` en `render.yaml` y en Render. Verificado en este orden, sin arriesgar los $47.82 hasta el final:
+
+1. Facilitator de CDP probado primero contra **testnet** con un pago real de punta a punta: tx [`0xb2a1ae93...`](https://sepolia.basescan.org/tx/0xb2a1ae93285f6b318283512bde7d7cae68bdc113acd349a9bcd65fda8f79ed2b) en Base Sepolia — verify + settle reales, no solo "no truena al arrancar".
+2. Recién ahí, mainnet activado. `GET /health` responde `eip155:8453`; el challenge 402 de cada producto muestra la dirección, red y contrato de USDC (`...02913`, oficial) correctos.
+3. Intento de pago real en mainnet (`/qrcode`, $0.002) rechazado por el facilitator con `self_send_not_allowed` — porque el único pagador disponible con fondos de mainnet es la misma wallet que cobra. Esto **confirma que el facilitator de CDP valida de verdad** (no es un simple "sí a todo"); no es un error de configuración.
+4. Decisión: no forzar una segunda wallet solo para la prueba cruzada (movería más dinero real sin necesidad). La liquidación real cruzada queda pendiente de que llegue el primer cliente genuino — distinto a Basalt — que pague por un producto.
+
+En resumen: infraestructura de mainnet completa y verificada hasta donde se puede sin un segundo pagador real. Los 47.82 USDC siguen en `0x1816489D...`, disponibles para cuando haga falta gastar (ej. pagarle a otro agente) o para seguir recibiendo cobros de clientes reales.
