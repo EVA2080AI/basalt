@@ -16,6 +16,7 @@ export const qrcodeProduct: Product = {
   description: "Genera un código QR (PNG en base64) para un texto o URL.",
   inputSchema: { type: "object", required: ["text"], properties: { text: { type: "string" } } },
   inputExample: { text: "https://basalt-n6lt.onrender.com" },
+  outputSchema: { type: "object", properties: { text: { type: "string" }, image: { type: "string" } }, required: ["text", "image"] },
   async handler(req, res) {
     const text = req.body?.text;
     if (typeof text !== "string" || text.length === 0) {

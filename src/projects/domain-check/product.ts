@@ -9,6 +9,18 @@ export const domainCheckProduct: Product = {
   description: "Revisa si un dominio está disponible para registrar vía RDAP, o quién lo tiene y cuándo vence si no lo está.",
   inputSchema: { type: "object", required: ["domain"], properties: { domain: { type: "string" } } },
   inputExample: { domain: "example.com" },
+  outputSchema: {
+    type: "object",
+    properties: {
+      domain: { type: "string" },
+      available: { type: "boolean" },
+      registrar: { type: ["string", "null"] },
+      createdAt: { type: ["string", "null"] },
+      expiresAt: { type: ["string", "null"] },
+      status: { type: "array", items: { type: "string" } },
+    },
+    required: ["domain", "available"],
+  },
   async handler(req, res) {
     const domain = req.body?.domain;
     if (typeof domain !== "string") {

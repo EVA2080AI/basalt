@@ -9,6 +9,18 @@ export const emailCheckProduct: Product = {
   description: "Valida sintaxis de un email y confirma registros MX reales del dominio — filtra direcciones que no pueden recibir correo.",
   inputSchema: { type: "object", required: ["email"], properties: { email: { type: "string", format: "email" } } },
   inputExample: { email: "hello@example.com" },
+  outputSchema: {
+    type: "object",
+    properties: {
+      email: { type: "string" },
+      validSyntax: { type: "boolean" },
+      domain: { type: ["string", "null"] },
+      hasMxRecords: { type: "boolean" },
+      mxHosts: { type: "array", items: { type: "string" } },
+      deliverable: { type: "boolean" },
+    },
+    required: ["email", "validSyntax", "deliverable"],
+  },
   async handler(req, res) {
     const email = req.body?.email;
     if (typeof email !== "string") {

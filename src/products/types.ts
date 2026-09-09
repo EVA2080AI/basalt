@@ -14,5 +14,7 @@ export interface Product {
   inputSchema?: Record<string, unknown>;
   /** Ejemplo real de body válido — el bazaar de x402 lo exige junto al schema. */
   inputExample?: Record<string, unknown>;
+  /** Forma de la respuesta 200 — se publica en /openapi.json para x402scan. */
+  outputSchema?: Record<string, unknown>;
   handler: (req: Request, res: Response) => Promise<void> | void;
 }

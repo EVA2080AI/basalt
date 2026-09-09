@@ -19,6 +19,7 @@ export const htmlToMarkdownProduct: Product = {
   description: "Convierte HTML a Markdown limpio — para que un agente no tenga que implementar su propio conversor.",
   inputSchema: { type: "object", required: ["html"], properties: { html: { type: "string" } } },
   inputExample: { html: "<h1>Hola</h1><p>Mundo</p>" },
+  outputSchema: { type: "object", properties: { markdown: { type: "string" } }, required: ["markdown"] },
   handler(req, res) {
     const html = req.body?.html;
     if (typeof html !== "string") {

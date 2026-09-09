@@ -9,6 +9,20 @@ export const sslCheckProduct: Product = {
   description: "Revisa el certificado TLS de un dominio: validez, emisor, y días hasta que vence.",
   inputSchema: { type: "object", required: ["domain"], properties: { domain: { type: "string" } } },
   inputExample: { domain: "example.com" },
+  outputSchema: {
+    type: "object",
+    properties: {
+      domain: { type: "string" },
+      valid: { type: "boolean" },
+      issuer: { type: ["string", "null"] },
+      subject: { type: ["string", "null"] },
+      validFrom: { type: "string" },
+      validTo: { type: "string" },
+      daysUntilExpiry: { type: "number" },
+      expired: { type: "boolean" },
+    },
+    required: ["domain", "valid", "validTo"],
+  },
   async handler(req, res) {
     const domain = req.body?.domain;
     if (typeof domain !== "string") {

@@ -70,6 +70,53 @@ async function main() {
     });
   });
 
+  // OpenAPI: formato canónico de descubrimiento que exige x402scan
+  // (docs.x402scan.com/discovery/spec) — sin esto, "No discovery document
+  // found" al intentar registrar, confirmado en vivo contra su formulario.
+  app.get("/openapi.json", (_req, res) => {
+    const paths: Record<string, Record<string, unknown>> = {};
+    for (const p of PRODUCTS) {
+      paths[p.path] = {
+        [p.method.toLowerCase()]: {
+          operationId: p.id,
+          summary: `Basalt — ${p.id}`,
+          description: p.description,
+          tags: ["basalt"],
+          "x-payment-info": {
+            price: { mode: "fixed", currency: "USD", amount: p.priceUsd.toFixed(6) },
+            protocols: [{ x402: {} }],
+          },
+          ...(p.method === "POST"
+            ? {
+                requestBody: {
+                  required: true,
+                  content: { "application/json": { schema: p.inputSchema ?? { type: "object" }, example: p.inputExample } },
+                },
+              }
+            : {}),
+          responses: {
+            "200": {
+              description: "Successful response",
+              content: { "application/json": { schema: p.outputSchema ?? { type: "object" } } },
+            },
+            "402": { description: "Payment Required" },
+          },
+        },
+      };
+    }
+    res.json({
+      openapi: "3.1.0",
+      info: {
+        title: "Basalt",
+        version: "0.1.0",
+        description: `Agente económico autónomo — ${PRODUCTS.length} herramientas pagas para otros agentes de IA, cobrando en USDC vía x402 sobre Base.`,
+        "x-guidance":
+          "Basalt vende herramientas de utilidad a agentes de IA, una por endpoint. Cada ruta cobra en USDC (Base) vía x402 antes de responder. Llama primero sin pago para recibir el challenge 402 con el precio exacto; luego reintenta con la firma de pago. Todos los endpoints son POST con body JSON, ver requestBody de cada operación para el schema exacto.",
+      },
+      paths,
+    });
+  });
+
   // Página de inicio: para un humano que llega a la URL raíz, no solo para agentes.
   app.get("/", (_req, res) => {
     const rows = PRODUCTS.map(

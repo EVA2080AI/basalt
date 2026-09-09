@@ -15,6 +15,11 @@ export const pdfExtractProduct: Product = {
   description: "Extrae el texto de un PDF dado por URL.",
   inputSchema: { type: "object", required: ["url"], properties: { url: { type: "string", format: "uri" } } },
   inputExample: { url: "https://bitcoin.org/bitcoin.pdf" },
+  outputSchema: {
+    type: "object",
+    properties: { url: { type: "string" }, pages: { type: "number" }, text: { type: "string" }, truncated: { type: "boolean" } },
+    required: ["url", "pages", "text"],
+  },
   async handler(req, res) {
     const url = req.body?.url;
     if (typeof url !== "string") {
