@@ -1,12 +1,12 @@
 import type { Product } from "../../products/types.js";
-import { checkDomain } from "./lookup.js";
+import { checkSsl } from "./lookup.js";
 
-export const domainCheckProduct: Product = {
-  id: "domain-check",
+export const sslCheckProduct: Product = {
+  id: "ssl-check",
   method: "POST",
-  path: "/domain-check",
-  priceUsd: Number(process.env.AUTOMATON_PRICE_DOMAIN_CHECK_USD ?? 0.01),
-  description: "Revisa si un dominio está disponible para registrar vía RDAP, o quién lo tiene y cuándo vence si no lo está.",
+  path: "/ssl-check",
+  priceUsd: Number(process.env.AUTOMATON_PRICE_SSL_CHECK_USD ?? 0.005),
+  description: "Revisa el certificado TLS de un dominio: validez, emisor, y días hasta que vence.",
   inputSchema: { type: "object", required: ["domain"], properties: { domain: { type: "string" } } },
   inputExample: { domain: "example.com" },
   async handler(req, res) {
@@ -16,7 +16,7 @@ export const domainCheckProduct: Product = {
       return;
     }
     try {
-      const result = await checkDomain(domain);
+      const result = await checkSsl(domain);
       res.json(result);
     } catch (err) {
       res.status(422).json({ error: err instanceof Error ? err.message : "Error desconocido" });

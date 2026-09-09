@@ -10,12 +10,24 @@ import { domainCheckProduct } from "./projects/domain-check/product.js";
 import { emailCheckProduct } from "./projects/email-check/product.js";
 import { htmlToMarkdownProduct } from "./projects/html-to-markdown/product.js";
 import { qrcodeProduct } from "./projects/qrcode/product.js";
+import { pdfExtractProduct } from "./projects/pdf-extract/product.js";
+import { sslCheckProduct } from "./projects/ssl-check/product.js";
+import { languageDetectProduct } from "./projects/language-detect/product.js";
 
 /**
  * Un solo servidor para todos los productos de Basalt. Agregar el producto
  * #21 es agregar una entrada a esta lista — no un puerto ni un proceso nuevo.
  */
-const PRODUCTS: Product[] = [urlMetadataProduct, domainCheckProduct, emailCheckProduct, htmlToMarkdownProduct, qrcodeProduct];
+const PRODUCTS: Product[] = [
+  urlMetadataProduct,
+  domainCheckProduct,
+  emailCheckProduct,
+  htmlToMarkdownProduct,
+  qrcodeProduct,
+  pdfExtractProduct,
+  sslCheckProduct,
+  languageDetectProduct,
+];
 
 const PORT = Number(process.env.PORT ?? 4021);
 
@@ -39,6 +51,23 @@ async function main() {
         description: p.description,
       })),
     );
+  });
+
+  // Manifiesto de descubrimiento (borrador de estándar de la x402 Foundation,
+  // draft-hawkins-x402-dns-discovery — no obligatorio hoy, pero barato de
+  // publicar y deja a Basalt listo si se vuelve estándar).
+  app.get("/.well-known/x402.json", (_req, res) => {
+    res.json({
+      x402Version: 2,
+      kind: "seller",
+      facilitator: "https://api.cdp.coinbase.com",
+      resources: PRODUCTS.map((p) => ({
+        resource: `${p.method} ${p.path}`,
+        description: p.description,
+        network: DEFAULT_POLICY.network,
+        payTo: wallet.address,
+      })),
+    });
   });
 
   // Página de inicio: para un humano que llega a la URL raíz, no solo para agentes.

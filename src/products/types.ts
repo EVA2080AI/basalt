@@ -10,5 +10,9 @@ export interface Product {
   path: string;
   priceUsd: number;
   description: string;
+  /** Forma del body esperado — se publica como pista de schema para el bazaar de x402. */
+  inputSchema?: Record<string, unknown>;
+  /** Ejemplo real de body válido — el bazaar de x402 lo exige junto al schema. */
+  inputExample?: Record<string, unknown>;
   handler: (req: Request, res: Response) => Promise<void> | void;
 }

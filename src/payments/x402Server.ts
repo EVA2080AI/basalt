@@ -2,6 +2,7 @@ import { x402ResourceServer } from "@x402/express";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { HTTPFacilitatorClient, type RoutesConfig } from "@x402/core/server";
 import { facilitator as cdpFacilitatorConfig } from "@coinbase/x402";
+import { declareDiscoveryExtension } from "@x402/extensions";
 import { DEFAULT_POLICY } from "../governance/policy.js";
 
 const FACILITATOR_URL = process.env.AUTOMATON_FACILITATOR_URL ?? "https://x402.org/facilitator";
@@ -33,13 +34,24 @@ export function createResourceServer() {
 }
 
 export interface ProductRoute {
+  id: string;
   method: "GET" | "POST";
   path: string;
   priceUsd: number;
   description: string;
+  /** Forma del body esperado — usada como pista de schema para el bazaar de x402. */
+  inputSchema?: Record<string, unknown>;
+  /** Ejemplo real de body válido — el bazaar de x402 lo exige junto al schema. */
+  inputExample?: Record<string, unknown>;
 }
 
-/** Combina las rutas de todos los productos de Basalt en una sola configuración x402. */
+/**
+ * Combina las rutas de todos los productos de Basalt en una sola
+ * configuración x402. Incluye metadata de descubrimiento (extensions.bazaar)
+ * para el directorio público de x402 — un agente comprador puede encontrar
+ * Basalt ahí en vez de necesitar la URL de memoria. El indexado real requiere
+ * un primer pago liquidado por un tercero (no autopago) — ver WALLETS.md.
+ */
 export function buildRoutes(products: ProductRoute[], payToAddress: string): RoutesConfig {
   const routes: RoutesConfig = {};
   for (const p of products) {
@@ -52,6 +64,14 @@ export function buildRoutes(products: ProductRoute[], payToAddress: string): Rou
         maxTimeoutSeconds: 60,
       },
       description: p.description,
+      serviceName: `Basalt: ${p.id}`,
+      tags: ["basalt", "agent-tools", p.id],
+      // Formato exacto exigido por @x402/extensions (confirmado en vivo: la
+      // forma que se nos ocurrió primero salía "malformed" al arrancar).
+      extensions:
+        p.method === "GET"
+          ? declareDiscoveryExtension({ input: p.inputExample, inputSchema: p.inputSchema })
+          : declareDiscoveryExtension({ bodyType: "json", input: p.inputExample, inputSchema: p.inputSchema }),
     };
   }
   return routes;

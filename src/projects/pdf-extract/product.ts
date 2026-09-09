@@ -1,0 +1,41 @@
+import { PDFParse } from "pdf-parse";
+import type { Product } from "../../products/types.js";
+
+const MAX_TEXT_CHARS = 20_000;
+
+/**
+ * Sexto producto de Basalt: extrae el texto de un PDF dado por URL — para
+ * que un agente no tenga que lidiar con el formato binario de PDF él mismo.
+ */
+export const pdfExtractProduct: Product = {
+  id: "pdf-extract",
+  method: "POST",
+  path: "/pdf-extract",
+  priceUsd: Number(process.env.AUTOMATON_PRICE_PDF_EXTRACT_USD ?? 0.01),
+  description: "Extrae el texto de un PDF dado por URL.",
+  inputSchema: { type: "object", required: ["url"], properties: { url: { type: "string", format: "uri" } } },
+  inputExample: { url: "https://bitcoin.org/bitcoin.pdf" },
+  async handler(req, res) {
+    const url = req.body?.url;
+    if (typeof url !== "string") {
+      res.status(400).json({ error: "Body debe incluir { url: string }" });
+      return;
+    }
+
+    let parser: PDFParse | undefined;
+    try {
+      parser = new PDFParse({ url });
+      const result = await parser.getText();
+      res.json({
+        url,
+        pages: result.total,
+        text: result.text.slice(0, MAX_TEXT_CHARS),
+        truncated: result.text.length > MAX_TEXT_CHARS,
+      });
+    } catch (err) {
+      res.status(422).json({ error: err instanceof Error ? err.message : "No se pudo extraer el texto del PDF." });
+    } finally {
+      await parser?.destroy();
+    }
+  },
+};

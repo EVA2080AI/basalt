@@ -14,6 +14,8 @@ export const qrcodeProduct: Product = {
   path: "/qrcode",
   priceUsd: Number(process.env.AUTOMATON_PRICE_QRCODE_USD ?? 0.002),
   description: "Genera un código QR (PNG en base64) para un texto o URL.",
+  inputSchema: { type: "object", required: ["text"], properties: { text: { type: "string" } } },
+  inputExample: { text: "https://basalt-n6lt.onrender.com" },
   async handler(req, res) {
     const text = req.body?.text;
     if (typeof text !== "string" || text.length === 0) {
