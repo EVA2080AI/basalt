@@ -6,8 +6,35 @@ import { generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount } from 
 import { createPublicClient, http, formatEther, formatUnits } from "viem";
 import { baseSepolia, base } from "viem/chains";
 
+/**
+ * Identidad de Basalt. Vive fuera del repo (~/.automaton), nunca en git.
+ *
+ * Testnet y mainnet usan ARCHIVOS SEPARADOS a propósito — nunca el mismo
+ * wallet.json reinterpretado según una variable de entorno. Así, fondear la
+ * dirección equivocada por confundir de red es prácticamente imposible: cada
+ * red tiene su propia clave, su propio archivo, su propia dirección.
+ */
+
+type NetworkId = "base-sepolia" | "base";
+
+const HOME_DIR = path.join(homedir(), ".automaton");
+
+function walletPath(network: NetworkId): string {
+  return path.join(HOME_DIR, `wallet.${network}.json`);
+}
+
+interface StoredWallet {
+  address: string;
+  network: NetworkId;
+  encrypted: boolean;
+  iv?: string;
+  authTag?: string;
+  ciphertext?: string;
+  privateKey?: string;
+}
+
 // Contratos oficiales de USDC (Circle) en cada red — usados solo para leer balance.
-const USDC_ADDRESS: Record<"base-sepolia" | "base", `0x${string}`> = {
+const USDC_ADDRESS: Record<NetworkId, `0x${string}`> = {
   "base-sepolia": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
   base: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
 };
@@ -21,32 +48,12 @@ const ERC20_BALANCE_ABI = [
   },
 ] as const;
 
-/**
- * Identidad de Automaton. Vive fuera del repo (~/.automaton), nunca en git.
- * Testnet (Base Sepolia) por defecto; mainnet solo con AUTOMATON_ALLOW_MAINNET=true.
- */
-
-const HOME_DIR = path.join(homedir(), ".automaton");
-const WALLET_PATH = path.join(HOME_DIR, "wallet.json");
-
-interface StoredWallet {
-  address: string;
-  network: "base-sepolia" | "base";
-  encrypted: boolean;
-  // Si encrypted=true: iv + authTag + ciphertext (AES-256-GCM sobre la private key).
-  // Si encrypted=false: privateKey en claro (solo prototipo, con warning explícito).
-  iv?: string;
-  authTag?: string;
-  ciphertext?: string;
-  privateKey?: string;
-}
-
 function ensureHomeDir(): void {
   if (!existsSync(HOME_DIR)) mkdirSync(HOME_DIR, { recursive: true, mode: 0o700 });
 }
 
 function deriveKey(passphrase: string): Buffer {
-  return scryptSync(passphrase, "automaton-wallet-salt", 32);
+  return scryptSync(passphrase, "basalt-wallet-salt", 32);
 }
 
 function encryptPrivateKey(privateKey: string, passphrase: string) {
@@ -66,26 +73,41 @@ function decryptPrivateKey(stored: StoredWallet, passphrase: string): string {
   return plaintext.toString("utf8");
 }
 
-function isMainnetAllowed(): boolean {
-  return process.env.AUTOMATON_ALLOW_MAINNET === "true";
+/** Cuál red usar por defecto cuando el llamador no especifica una explícitamente. */
+export function defaultNetwork(): NetworkId {
+  return process.env.AUTOMATON_ALLOW_MAINNET === "true" ? "base" : "base-sepolia";
 }
 
-export function walletExists(): boolean {
-  return existsSync(WALLET_PATH);
+export function walletExists(network: NetworkId = defaultNetwork()): boolean {
+  return existsSync(walletPath(network));
 }
 
-/** Genera una wallet nueva si no existe. Idempotente. */
-export function initWallet(): { address: string; network: string; isNew: boolean } {
+/**
+ * Genera una wallet nueva si no existe para esa red. Idempotente.
+ *
+ * Regla dura: una wallet de MAINNET nunca se crea sin passphrase. Testnet sí
+ * lo permite (con warning) porque ahí no hay dinero real en juego.
+ */
+export function initWallet(network: NetworkId = defaultNetwork()): { address: string; network: NetworkId; isNew: boolean } {
   ensureHomeDir();
-  if (walletExists()) {
-    const stored: StoredWallet = JSON.parse(readFileSync(WALLET_PATH, "utf8"));
+  const filePath = walletPath(network);
+
+  if (existsSync(filePath)) {
+    const stored: StoredWallet = JSON.parse(readFileSync(filePath, "utf8"));
     return { address: stored.address, network: stored.network, isNew: false };
+  }
+
+  const passphrase = process.env.AUTOMATON_WALLET_PASSPHRASE;
+
+  if (network === "base" && !passphrase) {
+    throw new Error(
+      "Rechazado: no se crea una wallet de MAINNET sin AUTOMATON_WALLET_PASSPHRASE. " +
+        "Una clave con dinero real nunca se guarda sin cifrar, sin excepción.",
+    );
   }
 
   const privateKey = generatePrivateKey();
   const account = privateKeyToAccount(privateKey);
-  const passphrase = process.env.AUTOMATON_WALLET_PASSPHRASE;
-  const network: StoredWallet["network"] = isMainnetAllowed() ? "base" : "base-sepolia";
 
   let stored: StoredWallet;
   if (passphrase) {
@@ -94,30 +116,31 @@ export function initWallet(): { address: string; network: string; isNew: boolean
   } else {
     // eslint-disable-next-line no-console
     console.warn(
-      "[automaton] AUTOMATON_WALLET_PASSPHRASE no está definida — la clave se guarda sin cifrar en " +
-        WALLET_PATH +
-        ". Recomendado solo para pruebas en testnet.",
+      `[basalt] AUTOMATON_WALLET_PASSPHRASE no está definida — la clave se guarda sin cifrar en ${filePath}. ` +
+        "Aceptable solo en testnet.",
     );
     stored = { address: account.address, network, encrypted: false, privateKey };
   }
 
-  writeFileSync(WALLET_PATH, JSON.stringify(stored, null, 2));
-  chmodSync(WALLET_PATH, 0o600);
+  writeFileSync(filePath, JSON.stringify(stored, null, 2));
+  chmodSync(filePath, 0o600);
   return { address: account.address, network, isNew: true };
 }
 
-export function loadAccount(): PrivateKeyAccount {
-  if (!walletExists()) {
-    throw new Error("No hay wallet de Automaton todavía. Ejecuta `npm run wallet:init` primero.");
+export function loadAccount(network: NetworkId = defaultNetwork()): PrivateKeyAccount {
+  const filePath = walletPath(network);
+  if (!existsSync(filePath)) {
+    throw new Error(`No hay wallet de Basalt para '${network}' todavía. Ejecuta "npm run wallet:init" primero.`);
   }
-  const stored: StoredWallet = JSON.parse(readFileSync(WALLET_PATH, "utf8"));
 
-  if (stored.network === "base" && !isMainnetAllowed()) {
+  if (network === "base" && process.env.AUTOMATON_ALLOW_MAINNET !== "true") {
     throw new Error(
-      "Esta wallet está configurada para Base mainnet pero AUTOMATON_ALLOW_MAINNET no está en 'true'. " +
+      "Se pidió cargar la wallet de mainnet pero AUTOMATON_ALLOW_MAINNET no está en 'true'. " +
         "Esto es intencional: evita mover fondos reales por accidente.",
     );
   }
+
+  const stored: StoredWallet = JSON.parse(readFileSync(filePath, "utf8"));
 
   let privateKey: string;
   if (stored.encrypted) {
@@ -131,9 +154,10 @@ export function loadAccount(): PrivateKeyAccount {
   return privateKeyToAccount(privateKey as `0x${string}`);
 }
 
-export async function getWalletInfo() {
-  if (!walletExists()) return null;
-  const stored: StoredWallet = JSON.parse(readFileSync(WALLET_PATH, "utf8"));
+export async function getWalletInfo(network: NetworkId = defaultNetwork()) {
+  const filePath = walletPath(network);
+  if (!existsSync(filePath)) return null;
+  const stored: StoredWallet = JSON.parse(readFileSync(filePath, "utf8"));
   const chain = stored.network === "base" ? base : baseSepolia;
   const client = createPublicClient({ chain, transport: http() });
 
