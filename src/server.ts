@@ -7,12 +7,15 @@ import { DEFAULT_POLICY } from "./governance/policy.js";
 import type { Product } from "./products/types.js";
 import { urlMetadataProduct } from "./projects/url-metadata/product.js";
 import { domainCheckProduct } from "./projects/domain-check/product.js";
+import { emailCheckProduct } from "./projects/email-check/product.js";
+import { htmlToMarkdownProduct } from "./projects/html-to-markdown/product.js";
+import { qrcodeProduct } from "./projects/qrcode/product.js";
 
 /**
  * Un solo servidor para todos los productos de Basalt. Agregar el producto
  * #21 es agregar una entrada a esta lista — no un puerto ni un proceso nuevo.
  */
-const PRODUCTS: Product[] = [urlMetadataProduct, domainCheckProduct];
+const PRODUCTS: Product[] = [urlMetadataProduct, domainCheckProduct, emailCheckProduct, htmlToMarkdownProduct, qrcodeProduct];
 
 const PORT = Number(process.env.PORT ?? 4021);
 
