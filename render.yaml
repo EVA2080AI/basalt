@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: basalt
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: AUTOMATON_PRIVATE_KEY
+        sync: false
+      - key: AUTOMATON_ALLOW_MAINNET
+        value: "false"
+      - key: AUTOMATON_DAILY_CAP_USD
+        value: "5"
+      - key: AUTOMATON_PER_CALL_CAP_USD
+        value: "1"
+      - key: AUTOMATON_APPROVAL_THRESHOLD_USD
+        value: "2"
+      - key: AUTOMATON_FACILITATOR_URL
+        value: "https://x402.org/facilitator"

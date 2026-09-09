@@ -78,8 +78,19 @@ export function defaultNetwork(): NetworkId {
   return process.env.AUTOMATON_ALLOW_MAINNET === "true" ? "base" : "base-sepolia";
 }
 
+/**
+ * Modo hosting: en un contenedor en la nube el disco no es persistente entre
+ * despliegues, así que la clave se inyecta como secreto de la plataforma en
+ * vez de leerse de un archivo local. Cuando está presente, tiene prioridad
+ * total y ninguna función de este módulo toca el filesystem.
+ */
+function envPrivateKey(): `0x${string}` | undefined {
+  const key = process.env.AUTOMATON_PRIVATE_KEY;
+  return key ? (key as `0x${string}`) : undefined;
+}
+
 export function walletExists(network: NetworkId = defaultNetwork()): boolean {
-  return existsSync(walletPath(network));
+  return envPrivateKey() !== undefined || existsSync(walletPath(network));
 }
 
 /**
@@ -89,6 +100,11 @@ export function walletExists(network: NetworkId = defaultNetwork()): boolean {
  * lo permite (con warning) porque ahí no hay dinero real en juego.
  */
 export function initWallet(network: NetworkId = defaultNetwork()): { address: string; network: NetworkId; isNew: boolean } {
+  const envKey = envPrivateKey();
+  if (envKey) {
+    return { address: privateKeyToAccount(envKey).address, network, isNew: false };
+  }
+
   ensureHomeDir();
   const filePath = walletPath(network);
 
@@ -128,6 +144,9 @@ export function initWallet(network: NetworkId = defaultNetwork()): { address: st
 }
 
 export function loadAccount(network: NetworkId = defaultNetwork()): PrivateKeyAccount {
+  const envKey = envPrivateKey();
+  if (envKey) return privateKeyToAccount(envKey);
+
   const filePath = walletPath(network);
   if (!existsSync(filePath)) {
     throw new Error(`No hay wallet de Basalt para '${network}' todavía. Ejecuta "npm run wallet:init" primero.`);
@@ -155,9 +174,19 @@ export function loadAccount(network: NetworkId = defaultNetwork()): PrivateKeyAc
 }
 
 export async function getWalletInfo(network: NetworkId = defaultNetwork()) {
+  const envKey = envPrivateKey();
   const filePath = walletPath(network);
-  if (!existsSync(filePath)) return null;
-  const stored: StoredWallet = JSON.parse(readFileSync(filePath, "utf8"));
+
+  let stored: { address: string; network: NetworkId; encrypted: boolean };
+  if (envKey) {
+    stored = { address: privateKeyToAccount(envKey).address, network, encrypted: true };
+  } else if (existsSync(filePath)) {
+    const fromDisk: StoredWallet = JSON.parse(readFileSync(filePath, "utf8"));
+    stored = { address: fromDisk.address, network: fromDisk.network, encrypted: fromDisk.encrypted };
+  } else {
+    return null;
+  }
+
   const chain = stored.network === "base" ? base : baseSepolia;
   const client = createPublicClient({ chain, transport: http() });
 

@@ -48,6 +48,23 @@ npm run governance:pending          # ver qué hay pendiente
 npm run governance:approve -- <id>  # o governance:reject
 ```
 
+## Desplegar (Render)
+
+El repo trae `render.yaml` listo para un despliegue tipo Blueprint:
+
+1. En [render.com](https://render.com), conecta tu cuenta de GitHub (tú, no yo — es tu cuenta).
+2. **New +** → **Blueprint** → selecciona el repo `EVA2080AI/basalt`. Render detecta `render.yaml` solo.
+3. Te va a pedir el valor de `AUTOMATON_PRIVATE_KEY` (queda marcado como secreto, nunca viaja por el repo). Ábrelo tú mismo desde tu máquina — nunca por un formulario que yo maneje:
+   ```bash
+   cat ~/.automaton/wallet.base-sepolia.json
+   ```
+   copia el valor del campo `privateKey` y pégalo en el campo de Render.
+4. Deploy. Cuando esté arriba, `GET /health` y `GET /products` deben responder sin pagar nada.
+
+**Por qué una variable de entorno y no el archivo de siempre:** el disco de un contenedor en la nube no es persistente entre despliegues — si guardáramos la wallet en un archivo ahí, cada redeploy generaría una identidad nueva y perderíamos acceso a los fondos ya cargados. `AUTOMATON_PRIVATE_KEY` como secreto de la plataforma resuelve eso; cuando está definida, `src/wallet/wallet.ts` la usa directo y no toca el filesystem.
+
+**Limitación conocida:** en el plan free, el ledger de gasto y las aprobaciones pendientes (`~/.automaton/ledger.json` / `approvals.json`) tampoco persisten entre despliegues — solo la identidad (la wallet) sobrevive, vía la variable de entorno. Para que el historial de gasto sobreviva un redeploy hace falta un disco persistente (plan pago) o una base de datos real — pendiente para cuando el volumen lo justifique.
+
 ## Reglas de seguridad (no negociables en este repo)
 
 - **Mainnet nunca se activa por accidente.** Requiere `AUTOMATON_ALLOW_MAINNET=true` explícito, y una wallet de mainnet no se crea sin `AUTOMATON_WALLET_PASSPHRASE` — nunca se guarda una clave con dinero real sin cifrar.

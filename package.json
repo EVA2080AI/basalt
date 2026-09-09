@@ -4,8 +4,10 @@
   "private": true,
   "description": "Basalt: agente económico autónomo que recibe y propone proyectos, los construye y los monetiza vía x402/USDC, con una capa de gobierno de gasto obligatoria.",
   "type": "module",
+  "engines": { "node": ">=20" },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
     "dev": "tsx src/server.ts",
     "wallet:init": "tsx src/wallet/cli.ts init",
     "wallet:info": "tsx src/wallet/cli.ts info",
