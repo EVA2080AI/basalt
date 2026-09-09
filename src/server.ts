@@ -14,6 +14,7 @@ import { pdfExtractProduct } from "./projects/pdf-extract/product.js";
 import { sslCheckProduct } from "./projects/ssl-check/product.js";
 import { languageDetectProduct } from "./projects/language-detect/product.js";
 import { jsonValidateProduct } from "./projects/json-validate/product.js";
+import { verifySignatureProduct } from "./projects/verify-signature/product.js";
 
 /**
  * Un solo servidor para todos los productos de Basalt. Agregar el producto
@@ -29,6 +30,7 @@ const PRODUCTS: Product[] = [
   sslCheckProduct,
   languageDetectProduct,
   jsonValidateProduct,
+  verifySignatureProduct,
 ];
 
 // Descripciones en español para la página /es — el resto de la superficie
@@ -44,6 +46,7 @@ const ES_DESCRIPTIONS: Record<string, string> = {
   "ssl-check": "Revisa el certificado TLS de un dominio: validez, emisor, y días hasta que vence.",
   "language-detect": "Detecta el idioma de un texto (186 idiomas soportados), con el top 3 más probable.",
   "json-validate": "Valida un payload JSON contra un JSON Schema y devuelve los errores exactos.",
+  "verify-signature": "Recupera el firmante de una firma EIP-191 o EIP-712 y la compara contra una dirección declarada.",
 };
 
 const PORT = Number(process.env.PORT ?? 4021);
