@@ -1,0 +1,30 @@
+{
+  "name": "basalt",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Basalt: agente económico autónomo que recibe y propone proyectos, los construye y los monetiza vía x402/USDC, con una capa de gobierno de gasto obligatoria.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev:url-metadata": "tsx src/projects/url-metadata/server.ts",
+    "wallet:init": "tsx src/wallet/cli.ts init",
+    "wallet:info": "tsx src/wallet/cli.ts info",
+    "test": "tsx --test src/**/*.test.ts"
+  },
+  "dependencies": {
+    "@x402/core": "2.25.0",
+    "@x402/evm": "2.25.0",
+    "@x402/express": "2.25.0",
+    "@x402/fetch": "2.25.0",
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
