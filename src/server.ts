@@ -21,6 +21,7 @@ import { financialIdCheckProduct } from "./projects/financial-id-check/product.j
 import { geoDistanceProduct } from "./projects/geo-distance/product.js";
 import { markdownToHtmlProduct } from "./projects/markdown-to-html/product.js";
 import { timezoneConvertProduct } from "./projects/timezone-convert/product.js";
+import { tokenCountProduct } from "./projects/token-count/product.js";
 
 /**
  * Un solo servidor para todos los productos de Basalt. Agregar el producto
@@ -41,6 +42,7 @@ const PRODUCTS: Product[] = [
   geoDistanceProduct,
   markdownToHtmlProduct,
   timezoneConvertProduct,
+  tokenCountProduct,
 ];
 
 // Descripciones en español para la página /es — el resto de la superficie
@@ -61,6 +63,7 @@ const ES_DESCRIPTIONS: Record<string, string> = {
   "geo-distance": "Calcula la distancia ortodrómica (km/mi) y el rumbo inicial entre dos coordenadas lat/lng.",
   "markdown-to-html": "Convierte Markdown a HTML — el sentido inverso de html-to-markdown.",
   "timezone-convert": "Convierte un instante ISO 8601 a la hora local de cualquier zona horaria IANA, con horario de verano incluido.",
+  "token-count": "Cuenta tokens de un texto con la codificación BPE real de los modelos GPT (cl100k_base u o200k_base) — para revisar el largo antes de llamar a un LLM.",
 };
 
 const PORT = Number(process.env.PORT ?? 4021);

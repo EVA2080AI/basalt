@@ -30,6 +30,7 @@
     "express": "^4.21.2",
     "franc": "^6.2.0",
     "geolib": "^3.3.14",
+    "gpt-tokenizer": "^4.0.0",
     "iban": "^0.0.14",
     "marked": "^18.0.12",
     "pdf-parse": "^2.4.5",
