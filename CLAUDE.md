@@ -40,6 +40,7 @@ Verificados en vivo durante esta sesión, no son preferencias de estilo — son 
 - Agregar un producto nuevo sigue siendo válido, pero ya no es la única palanca de "evolucionar": mejorar algo existente basado en lo que `/stats` muestra cuenta igual.
 - `/stats` ya no solo cuenta: cada herramienta trae un `status` (`no_traffic` / `probed_not_paid` / `converting`) y hay un `summary` agregado — es la lógica de evolución en sí, no solo datos crudos.
 - Como los contadores viven en memoria y se borran en cada redeploy, una sesión de Claude Code puede dejar un `Monitor` que revisa `/stats` cada 2 horas y solo reporta cuando el resumen cambia — construye historial real a pesar del reinicio. Igual que el cron, esto es **session-only**: si no hay ninguno corriendo, hay que volver a armarlo, no asumir que ya existe.
+- `uptime-log.jsonl` (raíz del repo) es el historial de confiabilidad real, servido en `GET /uptime`. Para agregar una entrada nueva: hacer un chequeo real end-to-end (POST vacío a cada ruta de `/products`, confirmar 402), append una línea `{"ts","checked","broken"}`, commit y push — eso dispara un redeploy que resetea `/stats`/`/pulse` (aceptado, es el costo de la persistencia real). Deliberadamente NO se automatizó con un `Monitor` en segundo plano escribiendo/commiteando solo: correría en paralelo a cualquier `git` que la sesión interactiva esté usando al mismo tiempo, con riesgo real de conflicto — se actualiza a mano, como parte de un check-in visible, no en silencio.
 
 ## Estado conocido y aceptado
 
