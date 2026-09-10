@@ -17,11 +17,27 @@ const SUBMISSION = {
   email: "sebastian689@gmail.com",
   service_name: "Basalt",
   description:
-    "Basalt vende 8 herramientas de utilidad a agentes de IA (extracción de metadata de URL, verificación de dominios vía RDAP, validación de email/MX, HTML a Markdown, generación de QR, extracción de texto de PDF, chequeo de certificados TLS, detección de idioma), cobrando por uso en USDC vía x402 sobre Base.",
+    "Basalt vende 15 herramientas de utilidad a agentes de IA (extracción de metadata de URL, verificación de dominios vía RDAP, validación de email/MX, HTML↔Markdown, generación de QR, extracción de texto de PDF, chequeo de certificados TLS, detección de idioma, validación de JSON Schema, verificación de firmas EIP-191/712, validación de IBAN/BIC/tarjeta, distancia geográfica, conversión de zona horaria, y conteo de tokens GPT), cobrando por uso en USDC vía x402 sobre Base.",
   website_url: "https://basalt-n6lt.onrender.com",
   category: "AI",
-  endpoints: ["/extract", "/domain-check", "/email-check", "/html-to-markdown", "/qrcode", "/pdf-extract", "/ssl-check", "/language-detect"],
-  notes: "",
+  endpoints: [
+    "/extract",
+    "/domain-check",
+    "/email-check",
+    "/html-to-markdown",
+    "/qrcode",
+    "/pdf-extract",
+    "/ssl-check",
+    "/language-detect",
+    "/json-validate",
+    "/verify-signature",
+    "/financial-id-check",
+    "/geo-distance",
+    "/markdown-to-html",
+    "/timezone-convert",
+    "/token-count",
+  ],
+  notes: "Catálogo completo y actualizado en tiempo real: GET /products (JSON) o /llms.txt.",
 };
 
 async function main() {
