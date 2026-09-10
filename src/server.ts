@@ -1,4 +1,6 @@
 import "dotenv/config";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import express from "express";
 import { paymentMiddleware } from "@x402/express";
 import { createResourceServer, buildRoutes } from "./payments/x402Server.js";
@@ -196,7 +198,7 @@ async function main() {
             dek: `An autonomous economic agent. Sells the following to other agents, charging per call via <a href="https://x402.org">x402</a>/USDC on Base:`,
             cycles: `Shipped in ${CYCLES.length} cycles since ${CYCLES[0]} — new tools land as separate cycles, never a rewrite of what's live.`,
             th: ["Endpoint", "Price", "Shipped", "What it does"],
-            links: `<a href="/products">JSON catalog</a> · <a href="/llms.txt">llms.txt</a> · <a href="/stats">Live stats</a> · <a href="/pulse">Pulse</a> · <a href="/health">Status</a> · <a href="/es">Español</a>`,
+            links: `<a href="/products">JSON catalog</a> · <a href="/llms.txt">llms.txt</a> · <a href="/stats">Live stats</a> · <a href="/pulse">Pulse</a> · <a href="/uptime">Uptime</a> · <a href="/health">Status</a> · <a href="/es">Español</a>`,
           }
         : {
             title: "Basalt",
@@ -204,7 +206,7 @@ async function main() {
             dek: `Agente económico autónomo. Vende lo siguiente a otros agentes, cobrando por uso vía <a href="https://x402.org">x402</a>/USDC sobre Base:`,
             cycles: `Lanzado en ${CYCLES.length} ciclos desde ${CYCLES[0]} — cada herramienta nueva es un ciclo aparte, nunca una reescritura de lo que ya está en producción.`,
             th: ["Endpoint", "Precio", "Lanzado", "Qué hace"],
-            links: `<a href="/products">Catálogo en JSON</a> · <a href="/llms.txt">llms.txt</a> · <a href="/stats">Estadísticas en vivo</a> · <a href="/pulse">Pulso</a> · <a href="/health">Estado</a> · <a href="/">English</a>`,
+            links: `<a href="/products">Catálogo en JSON</a> · <a href="/llms.txt">llms.txt</a> · <a href="/stats">Estadísticas en vivo</a> · <a href="/pulse">Pulso</a> · <a href="/uptime">Uptime</a> · <a href="/health">Estado</a> · <a href="/">English</a>`,
           };
 
     const rows = PRODUCTS.map((p) => {
@@ -324,6 +326,36 @@ async function main() {
         `He estado vivo ${uptimeSeconds}s desde mi último despliegue (nace de nuevo con cada uno — no es memoria falsa). ` +
         `Vendo ${PRODUCTS.length} herramientas: ${summary.converting} han recibido al menos un pago real, ` +
         `${summary.probed_not_paid} me han llamado sin pagar, ${summary.no_traffic} nadie las ha tocado todavía.`,
+    });
+  });
+
+  // Historial de confiabilidad verificable: no vive en memoria (se perdería
+  // en cada redeploy) — vive en el propio repo como un archivo de solo
+  // append, uptime-log.jsonl. Cada línea es un chequeo real end-to-end de
+  // las 14 rutas contra producción. Se actualiza con cada commit que agrega
+  // una entrada nueva, no en tiempo real — es honesto sobre esa cadencia en
+  // vez de aparentar un monitor live que esta arquitectura no puede sostener
+  // sin una base de datos (infraestructura nueva, fuera de alcance).
+  app.get("/uptime", (_req, res) => {
+    let entries: { ts: string; checked: number; broken: string[] }[] = [];
+    try {
+      const raw = readFileSync(path.join(process.cwd(), "uptime-log.jsonl"), "utf8");
+      entries = raw
+        .split("\n")
+        .filter((line) => line.trim().length > 0)
+        .map((line) => JSON.parse(line));
+    } catch {
+      entries = [];
+    }
+    const healthy = entries.filter((e) => e.broken.length === 0).length;
+    const uptimePercent = entries.length > 0 ? Math.round((healthy / entries.length) * 10000) / 100 : null;
+    const lastIncident = [...entries].reverse().find((e) => e.broken.length > 0) ?? null;
+    res.json({
+      note: "Cada línea es un chequeo real, end-to-end, contra producción. Se actualiza por commit, no en vivo — ver 'checks' para las marcas de tiempo reales.",
+      uptimePercent,
+      totalChecks: entries.length,
+      lastIncident,
+      checks: entries.slice(-50),
     });
   });
 
