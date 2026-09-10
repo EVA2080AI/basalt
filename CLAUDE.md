@@ -38,6 +38,8 @@ Verificados en vivo durante esta sesión, no son preferencias de estilo — son 
 - Si una herramienta tiene `probes` altos y `paid` en cero, alguien la está probando pero algo la frena antes de pagar — ahí hay una pista real de qué mejorar (precio, claridad de la descripción, ejemplo del body), no una adivinanza.
 - Si casi todo el tráfico son los propios auditores de los directorios (x402scan, gold-402, x402-list re-probando periódicamente para mantener el listado vivo) y nada más, agregar el producto #20 no cambia esa realidad — el cuello de botella es descubribilidad, no catálogo.
 - Agregar un producto nuevo sigue siendo válido, pero ya no es la única palanca de "evolucionar": mejorar algo existente basado en lo que `/stats` muestra cuenta igual.
+- `/stats` ya no solo cuenta: cada herramienta trae un `status` (`no_traffic` / `probed_not_paid` / `converting`) y hay un `summary` agregado — es la lógica de evolución en sí, no solo datos crudos.
+- Como los contadores viven en memoria y se borran en cada redeploy, una sesión de Claude Code puede dejar un `Monitor` que revisa `/stats` cada 2 horas y solo reporta cuando el resumen cambia — construye historial real a pesar del reinicio. Igual que el cron, esto es **session-only**: si no hay ninguno corriendo, hay que volver a armarlo, no asumir que ya existe.
 
 ## Estado conocido y aceptado
 
