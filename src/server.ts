@@ -259,11 +259,34 @@ async function main() {
     next();
   });
 
+  // Lógica de evolución: convierte los números crudos en una clasificación
+  // accionable. No es solo "cuánto tráfico" — es "qué hacer con esto":
+  //   no_traffic      → nadie ha tocado esta ruta desde el último deploy.
+  //   probed_not_paid → alguien la llama pero nunca liquida — la señal más
+  //                     valiosa de las tres: algo entre el descubrimiento y
+  //                     el pago está fallando (precio, claridad, ejemplo).
+  //   converting      → al menos un pago real liquidado.
+  function classify(t: { probes: number; paid: number }): "no_traffic" | "probed_not_paid" | "converting" {
+    if (t.paid > 0) return "converting";
+    if (t.probes > 0) return "probed_not_paid";
+    return "no_traffic";
+  }
+
   app.get("/stats", (_req, res) => {
+    const tools = PRODUCTS.map((p) => {
+      const t = stats.get(p.id)!;
+      return { id: p.id, path: p.path, probes: t.probes, paid: t.paid, status: classify(t) };
+    });
+    const summary = {
+      no_traffic: tools.filter((t) => t.status === "no_traffic").length,
+      probed_not_paid: tools.filter((t) => t.status === "probed_not_paid").length,
+      converting: tools.filter((t) => t.status === "converting").length,
+    };
     res.json({
       since: startedAt,
-      note: "En memoria — se reinicia en cada redeploy. 'probes' cuenta cualquier intento (pagado o no); 'paid' solo llamadas liquidadas.",
-      tools: PRODUCTS.map((p) => ({ id: p.id, path: p.path, ...stats.get(p.id)! })),
+      note: "En memoria — se reinicia en cada redeploy. 'probes' cuenta cualquier intento (pagado o no); 'paid' solo llamadas liquidadas. 'status' es la lógica de evolución: probed_not_paid es la señal más útil para decidir qué mejorar.",
+      summary,
+      tools,
     });
   });
 
