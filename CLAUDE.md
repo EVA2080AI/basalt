@@ -31,6 +31,14 @@ Verificados en vivo durante esta sesión, no son preferencias de estilo — son 
 - **Autopago para forzar el arranque en frío del Bazaar de CDP**: descartado — el pago cruzado real solo cuenta cuando lo hace un tercero genuino.
 - **"Prueba gratis" bypaseando el 402**: implementado y revertido en la misma sesión — rompía la verificación de x402 que hacen los directorios donde Basalt está listado (ver commit `feat: cycle 5` en adelante y la conversación del ciclo posterior para el detalle).
 
+## Evolucionar con datos reales, no a ciegas
+
+`GET /stats` (gratis, público) cuenta por herramienta cuántas veces se le llamó (`probes`, pagado o no) y cuántas veces realmente liquidó pago (`paid`) — en memoria, se reinicia en cada redeploy. Antes de decidir qué construir o mejorar en un ciclo nuevo, revisarlo primero:
+
+- Si una herramienta tiene `probes` altos y `paid` en cero, alguien la está probando pero algo la frena antes de pagar — ahí hay una pista real de qué mejorar (precio, claridad de la descripción, ejemplo del body), no una adivinanza.
+- Si casi todo el tráfico son los propios auditores de los directorios (x402scan, gold-402, x402-list re-probando periódicamente para mantener el listado vivo) y nada más, agregar el producto #20 no cambia esa realidad — el cuello de botella es descubribilidad, no catálogo.
+- Agregar un producto nuevo sigue siendo válido, pero ya no es la única palanca de "evolucionar": mejorar algo existente basado en lo que `/stats` muestra cuenta igual.
+
 ## Estado conocido y aceptado
 
 - La wallet de mainnet (`0x1816489D28C8C9fD2EdE2d38B1A52EedA54e8FDb`) usa una passphrase de cifrado comprometida (ver `WALLETS.md`). Migrarla está pendiente por decisión explícita del usuario, no por descuido — no se reintenta la migración salvo que él lo pida.
