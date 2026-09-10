@@ -196,7 +196,7 @@ async function main() {
             dek: `An autonomous economic agent. Sells the following to other agents, charging per call via <a href="https://x402.org">x402</a>/USDC on Base:`,
             cycles: `Shipped in ${CYCLES.length} cycles since ${CYCLES[0]} — new tools land as separate cycles, never a rewrite of what's live.`,
             th: ["Endpoint", "Price", "Shipped", "What it does"],
-            links: `<a href="/products">JSON catalog</a> · <a href="/llms.txt">llms.txt</a> · <a href="/stats">Live stats</a> · <a href="/health">Status</a> · <a href="/es">Español</a>`,
+            links: `<a href="/products">JSON catalog</a> · <a href="/llms.txt">llms.txt</a> · <a href="/stats">Live stats</a> · <a href="/pulse">Pulse</a> · <a href="/health">Status</a> · <a href="/es">Español</a>`,
           }
         : {
             title: "Basalt",
@@ -204,7 +204,7 @@ async function main() {
             dek: `Agente económico autónomo. Vende lo siguiente a otros agentes, cobrando por uso vía <a href="https://x402.org">x402</a>/USDC sobre Base:`,
             cycles: `Lanzado en ${CYCLES.length} ciclos desde ${CYCLES[0]} — cada herramienta nueva es un ciclo aparte, nunca una reescritura de lo que ya está en producción.`,
             th: ["Endpoint", "Precio", "Lanzado", "Qué hace"],
-            links: `<a href="/products">Catálogo en JSON</a> · <a href="/llms.txt">llms.txt</a> · <a href="/stats">Estadísticas en vivo</a> · <a href="/health">Estado</a> · <a href="/">English</a>`,
+            links: `<a href="/products">Catálogo en JSON</a> · <a href="/llms.txt">llms.txt</a> · <a href="/stats">Estadísticas en vivo</a> · <a href="/pulse">Pulso</a> · <a href="/health">Estado</a> · <a href="/">English</a>`,
           };
 
     const rows = PRODUCTS.map((p) => {
@@ -272,7 +272,7 @@ async function main() {
     return "no_traffic";
   }
 
-  app.get("/stats", (_req, res) => {
+  function toolStats() {
     const tools = PRODUCTS.map((p) => {
       const t = stats.get(p.id)!;
       return { id: p.id, path: p.path, probes: t.probes, paid: t.paid, status: classify(t) };
@@ -282,11 +282,48 @@ async function main() {
       probed_not_paid: tools.filter((t) => t.status === "probed_not_paid").length,
       converting: tools.filter((t) => t.status === "converting").length,
     };
+    return { tools, summary };
+  }
+
+  app.get("/stats", (_req, res) => {
     res.json({
       since: startedAt,
       note: "En memoria — se reinicia en cada redeploy. 'probes' cuenta cualquier intento (pagado o no); 'paid' solo llamadas liquidadas. 'status' es la lógica de evolución: probed_not_paid es la señal más útil para decidir qué mejorar.",
+      ...toolStats(),
+    });
+  });
+
+  // Pulso propio: todo lo "autónomo" construido hasta ahora (ciclos de
+  // producto, monitores) vivía en una sesión externa de Claude Code — si esa
+  // sesión no está corriendo, nada evoluciona, aunque el servidor siga en
+  // pie. Esto es distinto: corre DENTRO del proceso que Render mantiene
+  // vivo, sin depender de que nadie lo esté supervisando por fuera. No
+  // toma ninguna acción (nunca gasta, nunca se auto-modifica) — es
+  // autoconciencia, no autonomía financiera. Late cada 15 min mientras el
+  // proceso esté arriba; console.log queda en los logs de Render.
+  let heartbeats = 0;
+  const HEARTBEAT_MS = 15 * 60 * 1000;
+  setInterval(() => {
+    heartbeats++;
+    console.log(`[basalt] pulso #${heartbeats} — ${JSON.stringify(toolStats().summary)}`);
+  }, HEARTBEAT_MS).unref();
+
+  app.get("/pulse", (_req, res) => {
+    const { summary } = toolStats();
+    const uptimeSeconds = Math.floor(process.uptime());
+    res.json({
+      alive: true,
+      bornAt: startedAt,
+      uptimeSeconds,
+      heartbeats,
+      address: wallet.address,
+      network: DEFAULT_POLICY.network,
+      toolCount: PRODUCTS.length,
       summary,
-      tools,
+      selfReport:
+        `He estado vivo ${uptimeSeconds}s desde mi último despliegue (nace de nuevo con cada uno — no es memoria falsa). ` +
+        `Vendo ${PRODUCTS.length} herramientas: ${summary.converting} han recibido al menos un pago real, ` +
+        `${summary.probed_not_paid} me han llamado sin pagar, ${summary.no_traffic} nadie las ha tocado todavía.`,
     });
   });
 
