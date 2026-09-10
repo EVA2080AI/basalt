@@ -196,7 +196,7 @@ async function main() {
             dek: `An autonomous economic agent. Sells the following to other agents, charging per call via <a href="https://x402.org">x402</a>/USDC on Base:`,
             cycles: `Shipped in ${CYCLES.length} cycles since ${CYCLES[0]} — new tools land as separate cycles, never a rewrite of what's live.`,
             th: ["Endpoint", "Price", "Shipped", "What it does"],
-            links: `<a href="/products">JSON catalog</a> · <a href="/llms.txt">llms.txt</a> · <a href="/health">Status</a> · <a href="/es">Español</a>`,
+            links: `<a href="/products">JSON catalog</a> · <a href="/llms.txt">llms.txt</a> · <a href="/stats">Live stats</a> · <a href="/health">Status</a> · <a href="/es">Español</a>`,
           }
         : {
             title: "Basalt",
@@ -204,7 +204,7 @@ async function main() {
             dek: `Agente económico autónomo. Vende lo siguiente a otros agentes, cobrando por uso vía <a href="https://x402.org">x402</a>/USDC sobre Base:`,
             cycles: `Lanzado en ${CYCLES.length} ciclos desde ${CYCLES[0]} — cada herramienta nueva es un ciclo aparte, nunca una reescritura de lo que ya está en producción.`,
             th: ["Endpoint", "Precio", "Lanzado", "Qué hace"],
-            links: `<a href="/products">Catálogo en JSON</a> · <a href="/llms.txt">llms.txt</a> · <a href="/health">Estado</a> · <a href="/">English</a>`,
+            links: `<a href="/products">Catálogo en JSON</a> · <a href="/llms.txt">llms.txt</a> · <a href="/stats">Estadísticas en vivo</a> · <a href="/health">Estado</a> · <a href="/">English</a>`,
           };
 
     const rows = PRODUCTS.map((p) => {
@@ -245,13 +245,38 @@ async function main() {
   app.get("/", (_req, res) => res.type("html").send(renderLandingPage("en")));
   app.get("/es", (_req, res) => res.type("html").send(renderLandingPage("es")));
 
+  // Basalt operaba a ciegas: cero visibilidad de si algo real está tocando
+  // los endpoints. Este contador es la primera pieza de eso — en memoria
+  // (se reinicia en cada redeploy, por diseño: no guarda IPs ni bodies, solo
+  // cuenta). "probes" = cualquier intento (pagado o no); "paid" = liquidado.
+  const stats = new Map<string, { probes: number; paid: number }>();
+  for (const p of PRODUCTS) stats.set(p.id, { probes: 0, paid: 0 });
+  const startedAt = new Date().toISOString();
+
+  app.use((req, _res, next) => {
+    const product = PRODUCTS.find((p) => p.path === req.path && p.method === req.method);
+    if (product) stats.get(product.id)!.probes++;
+    next();
+  });
+
+  app.get("/stats", (_req, res) => {
+    res.json({
+      since: startedAt,
+      note: "En memoria — se reinicia en cada redeploy. 'probes' cuenta cualquier intento (pagado o no); 'paid' solo llamadas liquidadas.",
+      tools: PRODUCTS.map((p) => ({ id: p.id, path: p.path, ...stats.get(p.id)! })),
+    });
+  });
+
   const resourceServer = createResourceServer();
   const routes = buildRoutes(PRODUCTS, wallet.address);
   app.use(paymentMiddleware(routes, resourceServer));
 
   for (const product of PRODUCTS) {
     const method = product.method.toLowerCase() as "get" | "post";
-    app[method](product.path, product.handler);
+    app[method](product.path, (req: express.Request, res: express.Response) => {
+      stats.get(product.id)!.paid++;
+      return product.handler(req, res);
+    });
   }
 
   app.listen(PORT, () => {
