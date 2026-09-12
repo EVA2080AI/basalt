@@ -22,6 +22,11 @@ import { geoDistanceProduct } from "./projects/geo-distance/product.js";
 import { markdownToHtmlProduct } from "./projects/markdown-to-html/product.js";
 import { timezoneConvertProduct } from "./projects/timezone-convert/product.js";
 import { tokenCountProduct } from "./projects/token-count/product.js";
+import { hashDigestProduct } from "./projects/hash-digest/product.js";
+import { jwtDecodeProduct } from "./projects/jwt-decode/product.js";
+import { urlParseProduct } from "./projects/url-parse/product.js";
+import { ethAddressProduct } from "./projects/eth-address/product.js";
+import { ipCheckProduct } from "./projects/ip-check/product.js";
 
 /**
  * Un solo servidor para todos los productos de Basalt. Agregar el producto
@@ -43,6 +48,11 @@ const PRODUCTS: Product[] = [
   markdownToHtmlProduct,
   timezoneConvertProduct,
   tokenCountProduct,
+  hashDigestProduct,
+  jwtDecodeProduct,
+  urlParseProduct,
+  ethAddressProduct,
+  ipCheckProduct,
 ];
 
 // Descripciones en español para la página /es — el resto de la superficie
@@ -64,6 +74,11 @@ const ES_DESCRIPTIONS: Record<string, string> = {
   "markdown-to-html": "Convierte Markdown a HTML — el sentido inverso de html-to-markdown.",
   "timezone-convert": "Convierte un instante ISO 8601 a la hora local de cualquier zona horaria IANA, con horario de verano incluido.",
   "token-count": "Cuenta tokens de un texto con la codificación BPE real de los modelos GPT (cl100k_base u o200k_base) — para revisar el largo antes de llamar a un LLM.",
+  "hash-digest": "Calcula el hash de un texto con sha256, sha512, sha1, md5, sha3-256 o keccak256 — opcionalmente como HMAC con una clave secreta.",
+  "jwt-decode": "Decodifica el header y los claims de un JWT y reporta su estado temporal (activo, vencido, aún no válido) — sin verificar la firma.",
+  "url-parse": "Descompone una URL en sus partes y devuelve una forma canónica normalizada, sin parámetros de rastreo (utm_*, fbclid, gclid…).",
+  "eth-address": "Valida una dirección EVM y devuelve su forma con checksum EIP-55; detecta checksums incorrectos y la dirección cero.",
+  "ip-check": "Clasifica una IP v4/v6 (pública, privada, loopback, link-local, reservada…) y la prueba contra rangos CIDR opcionales — un chequeo anti-SSRF / allowlist.",
 };
 
 const PORT = Number(process.env.PORT ?? 4021);
