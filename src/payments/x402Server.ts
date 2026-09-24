@@ -1,6 +1,7 @@
 import { x402ResourceServer } from "@x402/express";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
-import { HTTPFacilitatorClient, type RoutesConfig } from "@x402/core/server";
+import { HTTPFacilitatorClient, type RoutesConfig, type RouteConfig } from "@x402/core/server";
+import { getDefaultAsset } from "@x402/evm";
 import { facilitator as cdpFacilitatorConfig } from "@coinbase/x402";
 import { declareDiscoveryExtension } from "@x402/extensions";
 import { DEFAULT_POLICY } from "../governance/policy.js";
@@ -49,6 +50,54 @@ export interface ProductRoute {
   outputExample?: Record<string, unknown>;
 }
 
+/** La forma que `accepts` acepta en RoutesConfig — anclada al tipo del SDK. */
+type AcceptsOption = NonNullable<RouteConfig["accepts"]>;
+
+/**
+ * Forma de CONFIG (PaymentOption): lo que consume @x402/express para montar
+ * una ruta. Usa `price` en dólares legibles; el middleware lo convierte a
+ * unidades atómicas al emitir el 402. El tipo de retorno es explícito a
+ * propósito: sin él, un campo mal escrito (maxTimeoutSecs) compila igual y el
+ * middleware cae en silencio al timeout por defecto.
+ */
+export function acceptsFor(p: ProductRoute, payToAddress: string): AcceptsOption {
+  return {
+    scheme: "exact",
+    price: `$${p.priceUsd.toFixed(3)}`,
+    network: DEFAULT_POLICY.network,
+    payTo: payToAddress,
+    maxTimeoutSeconds: 60,
+  };
+}
+
+/**
+ * Forma de WIRE (PaymentRequirements): exactamente lo que el 402 real devuelve
+ * en el header `payment-required`, y por lo tanto la única que puede publicarse
+ * bajo la clave `accepts` de un manifiesto.
+ *
+ * No es lo mismo que la forma de CONFIG de arriba: el validador oficial
+ * (PaymentRequirementsV2Schema de @x402/core/schemas) exige `amount` en
+ * unidades atómicas y `asset`, que la de config no tiene. Publicar la de config
+ * ahí hace que cualquier consumidor que valide contra el esquema de x402
+ * descarte el recurso.
+ *
+ * `asset`/`extra`/`decimals` se derivan de getDefaultAsset del SDK en vez de
+ * hardcodearse: los valores cambian por red (en mainnet el nombre EIP-712 del
+ * token es "USD Coin", en Base Sepolia es "USDC").
+ */
+export function paymentRequirementsFor(p: ProductRoute, payToAddress: string) {
+  const asset = getDefaultAsset(DEFAULT_POLICY.network, "USDC");
+  return {
+    scheme: "exact" as const,
+    network: DEFAULT_POLICY.network,
+    amount: String(Math.round(p.priceUsd * 10 ** asset.decimals)),
+    asset: asset.asset,
+    payTo: payToAddress,
+    maxTimeoutSeconds: 60,
+    extra: { name: asset.name, version: asset.version },
+  };
+}
+
 /**
  * Combina las rutas de todos los productos de Basalt en una sola
  * configuración x402. Incluye metadata de descubrimiento (extensions.bazaar)
@@ -60,13 +109,7 @@ export function buildRoutes(products: ProductRoute[], payToAddress: string): Rou
   const routes: RoutesConfig = {};
   for (const p of products) {
     routes[`${p.method} ${p.path}`] = {
-      accepts: {
-        scheme: "exact",
-        price: `$${p.priceUsd.toFixed(3)}`,
-        network: DEFAULT_POLICY.network,
-        payTo: payToAddress,
-        maxTimeoutSeconds: 60,
-      },
+      accepts: acceptsFor(p, payToAddress),
       description: p.description,
       serviceName: `Basalt: ${p.id}`,
       tags: ["basalt", "agent-tools", p.id],

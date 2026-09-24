@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import express from "express";
 import { paymentMiddleware } from "@x402/express";
-import { createResourceServer, buildRoutes } from "./payments/x402Server.js";
+import { createResourceServer, buildRoutes, paymentRequirementsFor } from "./payments/x402Server.js";
 import { initWallet } from "./wallet/wallet.js";
 import { DEFAULT_POLICY } from "./governance/policy.js";
 import type { Product } from "./products/types.js";
@@ -146,10 +146,25 @@ async function main() {
       kind: "seller",
       facilitator: "https://api.cdp.coinbase.com",
       resources: PRODUCTS.map((p) => ({
+        // `resource` se mantiene tal cual porque es el campo contra el que
+        // gold-402 y x402scan ya verificaron a Basalt. `method`/`path` van
+        // aparte: los indexadores que tratan `resource` como path publicaban
+        // engendros tipo "GET https://basalt.../POST /extract" (visto en vivo
+        // en el listado de Cleared Index, 2026-09-23).
         resource: `${p.method} ${p.path}`,
+        method: p.method,
+        path: p.path,
         description: p.description,
         network: DEFAULT_POLICY.network,
         payTo: wallet.address,
+        // Sin precio en el manifiesto, un indexador honesto publica "price
+        // unknown — confirm before pay", justo antes del pago. `priceUsd` es el
+        // número legible; `accepts` lleva los PaymentRequirements con la forma
+        // de wire del 402 real (amount atómico + asset), la única que pasa
+        // PaymentRequirementsV2Schema. El 402 sigue siendo la fuente de verdad:
+        // esto es descubrimiento, no un atajo para saltear el desafío de pago.
+        priceUsd: p.priceUsd,
+        accepts: [paymentRequirementsFor(p, wallet.address)],
       })),
     });
   });
