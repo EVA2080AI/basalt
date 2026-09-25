@@ -28,7 +28,8 @@ import { urlParseProduct } from "./projects/url-parse/product.js";
 import { ethAddressProduct } from "./projects/eth-address/product.js";
 import { ipCheckProduct } from "./projects/ip-check/product.js";
 import { x402DiscoverProduct } from "./projects/x402-discover/product.js";
-import { loadSnapshot, refresh as refreshPeers, registrySummary } from "./discovery/registry.js";
+import { loadSnapshot, refresh as refreshPeers, revalidateKnown, registrySummary } from "./discovery/registry.js";
+import { introspect } from "./discovery/introspect.js";
 
 /**
  * Un solo servidor para todos los productos de Basalt. Agregar el producto
@@ -93,6 +94,20 @@ async function main() {
 
   const app = express();
   app.use(express.json());
+
+  // CORS solo en la superficie pública de lectura. Son endpoints gratis y
+  // públicos: sin esto, un dashboard en el navegador o un agente corriendo en
+  // una página no puede leerlos. Las rutas pagas (POST) no se tocan — el
+  // desafío 402 queda exactamente como lo verifican los directorios.
+  const PUBLIC_READ = [
+    "/health", "/stats", "/pulse", "/uptime", "/introspect", "/products",
+    "/openapi.json", "/llms.txt", "/.well-known/x402.json",
+  ];
+  app.get(PUBLIC_READ, (_req, res, next) => {
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Expose-Headers", "Content-Type");
+    next();
+  });
 
   app.get("/health", (_req, res) => res.json({ status: "ok", network: DEFAULT_POLICY.network }));
 
@@ -354,18 +369,59 @@ async function main() {
   // no montar un segundo temporizador.
   const CRAWL_EVERY_HEARTBEATS = 24; // 24 * 15min = 6h
 
+  // El plan de Render es `free`: duerme el servicio tras ~15 min sin tráfico y
+  // lo revive en la siguiente request. Medido en vivo el 2026-09-25: el proceso
+  // llevaba 8 latidos y `lastRefresh` seguía en null — el rastreo de 6h NUNCA
+  // se disparó, porque el proceso no vive 6 horas seguidas.
+  //
+  // Por eso hay dos ritmos distintos:
+  //   - Al arrancar (90s después, para no ensuciar el cold start): revalidar
+  //     solo los vendedores ya conocidos. Son ~40 requests, termina en
+  //     segundos, y detecta los que se murieron. Esto sí corre en cada
+  //     despertar del proceso.
+  //   - Cada 6h, si el proceso llega a vivir tanto: el rastreo completo de las
+  //     ~310 semillas, que es el que descubre vendedores nuevos.
+  //
+  // El rastreo completo no se hace en cada arranque a propósito: son ~600
+  // requests salientes a terceros, y dispararlas cada vez que Render despierta
+  // el proceso sería abusar de pares que no nos deben nada.
+  setTimeout(() => {
+    console.log("[basalt] revalidando vendedores conocidos (solo lectura)…");
+    void revalidateKnown(new Date().toISOString()).then((r) => {
+      console.log(`[basalt] revalidación lista — ${JSON.stringify(r)}`);
+    });
+  }, 90_000).unref();
+
   setInterval(() => {
     heartbeats++;
     console.log(`[basalt] pulso #${heartbeats} — ${JSON.stringify(toolStats().summary)}`);
 
     if (heartbeats % CRAWL_EVERY_HEARTBEATS === 0) {
       const startedAtCrawl = new Date().toISOString();
-      console.log(`[basalt] rastreando el ecosistema x402 (solo lectura)…`);
+      console.log(`[basalt] rastreando el ecosistema x402 completo (solo lectura)…`);
       void refreshPeers(startedAtCrawl).then(() => {
         console.log(`[basalt] índice de pares actualizado — ${JSON.stringify(registrySummary())}`);
       });
     }
   }, HEARTBEAT_MS).unref();
+
+  // Autodiagnóstico por reglas. Gratis y público, como el resto de la
+  // telemetría: es el insumo del paso 2 de OPERATING.md, así que una sesión
+  // nueva no tiene que recalcularlo a mano.
+  app.get("/introspect", (_req, res) => {
+    const { tools } = toolStats();
+    res.json(
+      introspect({
+        now: new Date(),
+        bornAt: startedAt,
+        uptimeSeconds: Math.floor(process.uptime()),
+        heartbeats,
+        tools,
+        catalog: PRODUCTS.map((p) => ({ id: p.id, path: p.path, priceUsd: p.priceUsd })),
+        manifestResourceCount: PRODUCTS.length,
+      }),
+    );
+  });
 
   app.get("/pulse", (_req, res) => {
     const { summary } = toolStats();

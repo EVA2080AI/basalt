@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
-import { collectSeeds, probeAll, sellers, type Peer, type PeerRegistry } from "./peers.js";
+import { collectSeeds, probeAll, probePeer, sellers, type Peer, type PeerRegistry } from "./peers.js";
 
 /**
  * Registro de pares en memoria.
@@ -81,6 +81,49 @@ export async function refresh(now: string): Promise<void> {
   } finally {
     refreshing = false;
   }
+}
+
+/**
+ * Revalida solo los vendedores que ya están en el índice. Es el rastreo barato:
+ * ~40 requests en vez de ~600, así puede correr en cada arranque del proceso
+ * sin castigar a terceros. Detecta los que se cayeron y actualiza precios, pero
+ * NO descubre vendedores nuevos — eso lo hace el rastreo completo.
+ *
+ * Un par que deja de responder se marca, no se borra: puede estar durmiendo
+ * igual que Basalt en el plan free de Render, y borrarlo perdería la única
+ * manera de volver a encontrarlo.
+ */
+export async function revalidateKnown(now: string): Promise<{
+  checked: number;
+  stillSelling: number;
+  wentDark: string[];
+}> {
+  const known = sellers(registry);
+  if (known.length === 0) return { checked: 0, stillSelling: 0, wentDark: [] };
+
+  const wentDark: string[] = [];
+  const updated: Peer[] = [];
+
+  // Secuencial con concurrencia baja: son pocos y no hay apuro.
+  const results = await Promise.all(
+    known.map(async (peer) => ({ before: peer, after: await probePeer(peer.origin) })),
+  );
+
+  for (const { before, after } of results) {
+    const stillSells = after.kind === "x402_manifest" || after.kind === "x402_402";
+    if (stillSells) {
+      updated.push(after);
+    } else {
+      wentDark.push(before.origin);
+      // Se conserva la entrada anterior, anotando que no respondió.
+      updated.push({ ...before, note: `no respondió en la revalidación de ${now}` });
+    }
+  }
+
+  registry = { ...registry, peers: updated.sort((a, b) => a.origin.localeCompare(b.origin)) };
+  const stillSelling = updated.length - wentDark.length;
+  lastRefresh = { at: now, sellers: stillSelling, resources: sellers(registry).reduce((n, p) => n + p.resources.length, 0) };
+  return { checked: known.length, stillSelling, wentDark };
 }
 
 export interface DiscoverQuery {
