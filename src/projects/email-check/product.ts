@@ -7,6 +7,8 @@ export const emailCheckProduct: Product = {
   path: "/email-check",
   priceUsd: Number(process.env.AUTOMATON_PRICE_EMAIL_CHECK_USD ?? 0.005),
   description: "Validates email syntax and confirms real MX records for the domain — filters out addresses that can't receive mail.",
+  descriptionEs:
+    "Valida sintaxis de un email y confirma registros MX reales del dominio — filtra direcciones que no pueden recibir correo.",
   launchedAt: "2026-09-08",
   inputSchema: { type: "object", required: ["email"], properties: { email: { type: "string", format: "email" } } },
   inputExample: { email: "hello@example.com" },

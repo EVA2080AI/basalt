@@ -15,6 +15,8 @@ export const verifySignatureProduct: Product = {
   path: "/verify-signature",
   priceUsd: Number(process.env.AUTOMATON_PRICE_VERIFY_SIGNATURE_USD ?? 0.002),
   description: "Recovers the signer of an EIP-191 or EIP-712 signature and checks it against a claimed address.",
+  descriptionEs:
+    "Recupera el firmante de una firma EIP-191 o EIP-712 y la compara contra una dirección declarada.",
   launchedAt: "2026-09-09",
   inputSchema: {
     type: "object",

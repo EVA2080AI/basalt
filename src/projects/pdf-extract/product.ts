@@ -13,6 +13,8 @@ export const pdfExtractProduct: Product = {
   path: "/pdf-extract",
   priceUsd: Number(process.env.AUTOMATON_PRICE_PDF_EXTRACT_USD ?? 0.01),
   description: "Extracts the text from a PDF given its URL.",
+  descriptionEs:
+    "Extrae el texto de un PDF dado por URL.",
   launchedAt: "2026-09-09",
   inputSchema: { type: "object", required: ["url"], properties: { url: { type: "string", format: "uri" } } },
   inputExample: { url: "https://bitcoin.org/bitcoin.pdf" },

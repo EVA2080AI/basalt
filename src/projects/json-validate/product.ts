@@ -18,6 +18,8 @@ export const jsonValidateProduct: Product = {
   path: "/json-validate",
   priceUsd: Number(process.env.AUTOMATON_PRICE_JSON_VALIDATE_USD ?? 0.002),
   description: "Validates a JSON payload against a JSON Schema (draft 2020-12) and returns the exact validation errors.",
+  descriptionEs:
+    "Valida un payload JSON contra un JSON Schema y devuelve los errores exactos.",
   launchedAt: "2026-09-09",
   inputSchema: {
     type: "object",

@@ -15,6 +15,8 @@ export const ethAddressProduct: Product = {
   path: "/eth-address",
   priceUsd: Number(process.env.AUTOMATON_PRICE_ETH_ADDRESS_USD ?? 0.002),
   description: "Validates an EVM address and returns its EIP-55 checksummed form; flags bad checksums and the zero address.",
+  descriptionEs:
+    "Valida una dirección EVM y devuelve su forma con checksum EIP-55; detecta checksums incorrectos y la dirección cero.",
   launchedAt: "2026-09-12",
   inputSchema: {
     type: "object",

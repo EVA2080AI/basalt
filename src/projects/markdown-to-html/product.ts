@@ -14,6 +14,8 @@ export const markdownToHtmlProduct: Product = {
   path: "/markdown-to-html",
   priceUsd: Number(process.env.AUTOMATON_PRICE_MARKDOWN_TO_HTML_USD ?? 0.003),
   description: "Converts Markdown to HTML — the reverse direction of html-to-markdown.",
+  descriptionEs:
+    "Convierte Markdown a HTML — el sentido inverso de html-to-markdown.",
   launchedAt: "2026-09-09",
   inputSchema: { type: "object", required: ["markdown"], properties: { markdown: { type: "string" } } },
   inputExample: { markdown: "# Hello\n\nWorld" },

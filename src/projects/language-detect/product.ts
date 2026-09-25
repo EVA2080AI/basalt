@@ -13,6 +13,8 @@ export const languageDetectProduct: Product = {
   path: "/language-detect",
   priceUsd: Number(process.env.AUTOMATON_PRICE_LANGUAGE_DETECT_USD ?? 0.002),
   description: "Detects the language of a text (186 languages supported), returning the top 3 most likely matches.",
+  descriptionEs:
+    "Detecta el idioma de un texto (186 idiomas soportados), con el top 3 más probable.",
   launchedAt: "2026-09-09",
   inputSchema: { type: "object", required: ["text"], properties: { text: { type: "string" } } },
   inputExample: { text: "Hello, this is a test." },

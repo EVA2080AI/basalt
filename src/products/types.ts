@@ -9,7 +9,15 @@ export interface Product {
   method: "GET" | "POST";
   path: string;
   priceUsd: number;
+  /** En inglés: es el idioma del ecosistema x402 y de todos los directorios. */
   description: string;
+  /**
+   * Traducción al español, para la página `/es`. Vive acá y no en un mapa aparte
+   * en el server a propósito: cuando estaban separados, agregar un producto y
+   * olvidar la traducción hacía que `/es` cayera al inglés en silencio, sin que
+   * nada fallara. Siendo obligatoria en el tipo, no se puede olvidar.
+   */
+  descriptionEs: string;
   /** Forma del body esperado — se publica como pista de schema para el bazaar de x402. */
   inputSchema?: Record<string, unknown>;
   /** Ejemplo real de body válido — el bazaar de x402 lo exige junto al schema. */

@@ -65,6 +65,8 @@ export const ipCheckProduct: Product = {
   path: "/ip-check",
   priceUsd: Number(process.env.AUTOMATON_PRICE_IP_CHECK_USD ?? 0.002),
   description: "Classifies an IPv4/IPv6 address (public, private, loopback, link-local, reserved…) and tests it against optional CIDR ranges — an SSRF/allowlist check.",
+  descriptionEs:
+    "Clasifica una IP v4/v6 (pública, privada, loopback, link-local, reservada…) y la prueba contra rangos CIDR opcionales — un chequeo anti-SSRF / allowlist.",
   launchedAt: "2026-09-12",
   inputSchema: {
     type: "object",

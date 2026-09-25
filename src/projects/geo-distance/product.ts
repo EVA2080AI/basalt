@@ -22,6 +22,8 @@ export const geoDistanceProduct: Product = {
   path: "/geo-distance",
   priceUsd: Number(process.env.AUTOMATON_PRICE_GEO_DISTANCE_USD ?? 0.002),
   description: "Calculates great-circle distance (km/mi) and initial bearing between two lat/lng coordinates.",
+  descriptionEs:
+    "Calcula la distancia ortodrómica (km/mi) y el rumbo inicial entre dos coordenadas lat/lng.",
   launchedAt: "2026-09-09",
   inputSchema: {
     type: "object",

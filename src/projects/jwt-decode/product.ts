@@ -18,6 +18,8 @@ export const jwtDecodeProduct: Product = {
   path: "/jwt-decode",
   priceUsd: Number(process.env.AUTOMATON_PRICE_JWT_DECODE_USD ?? 0.002),
   description: "Decodes a JWT's header and claims and reports its time status (active, expired, not yet valid) — without signature verification.",
+  descriptionEs:
+    "Decodifica el header y los claims de un JWT y reporta su estado temporal (activo, vencido, aún no válido) — sin verificar la firma.",
   launchedAt: "2026-09-12",
   inputSchema: {
     type: "object",

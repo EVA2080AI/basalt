@@ -30,6 +30,8 @@ export const financialIdCheckProduct: Product = {
   path: "/financial-id-check",
   priceUsd: Number(process.env.AUTOMATON_PRICE_FINANCIAL_ID_CHECK_USD ?? 0.002),
   description: "Validates an IBAN (mod-97 checksum), BIC/SWIFT (ISO 9362 format), or card number (Luhn checksum).",
+  descriptionEs:
+    "Valida un IBAN (checksum mod-97), un BIC/SWIFT (formato ISO 9362), o un número de tarjeta (checksum de Luhn).",
   launchedAt: "2026-09-09",
   inputSchema: {
     type: "object",

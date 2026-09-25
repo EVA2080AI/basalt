@@ -16,7 +16,7 @@
     "governance:pending": "tsx src/governance/cli.ts pending",
     "governance:approve": "tsx src/governance/cli.ts approve",
     "governance:reject": "tsx src/governance/cli.ts reject",
-    "test": "tsx --test src/**/*.test.ts"
+    "test": "tsx --test src"
   },
   "dependencies": {
     "@coinbase/x402": "2.1.0",

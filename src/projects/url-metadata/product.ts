@@ -7,6 +7,8 @@ export const urlMetadataProduct: Product = {
   path: "/extract",
   priceUsd: Number(process.env.AUTOMATON_PRICE_URL_METADATA_USD ?? 0.005),
   description: "Extracts title, description, image, and clean text from a URL — built for other agents to consume.",
+  descriptionEs:
+    "Extrae título, descripción, imagen y texto limpio de una URL — pensado para que otros agentes lo consuman.",
   launchedAt: "2026-09-08",
   inputSchema: { type: "object", required: ["url"], properties: { url: { type: "string", format: "uri" } } },
   inputExample: { url: "https://example.com" },

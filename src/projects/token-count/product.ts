@@ -20,6 +20,8 @@ export const tokenCountProduct: Product = {
   priceUsd: Number(process.env.AUTOMATON_PRICE_TOKEN_COUNT_USD ?? 0.002),
   description:
     "Counts tokens in a text using real GPT-family BPE encodings (cl100k_base or o200k_base) — check length before calling an LLM.",
+  descriptionEs:
+    "Cuenta tokens de un texto con la codificación BPE real de los modelos GPT (cl100k_base u o200k_base) — para revisar el largo antes de llamar a un LLM.",
   launchedAt: "2026-09-10",
   inputSchema: {
     type: "object",

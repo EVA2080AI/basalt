@@ -17,6 +17,8 @@ export const htmlToMarkdownProduct: Product = {
   path: "/html-to-markdown",
   priceUsd: Number(process.env.AUTOMATON_PRICE_HTML_TO_MARKDOWN_USD ?? 0.003),
   description: "Converts HTML to clean Markdown — so an agent doesn't have to build its own converter.",
+  descriptionEs:
+    "Convierte HTML a Markdown limpio — para que un agente no tenga que implementar su propio conversor.",
   launchedAt: "2026-09-08",
   inputSchema: { type: "object", required: ["html"], properties: { html: { type: "string" } } },
   inputExample: { html: "<h1>Hello</h1><p>World</p>" },

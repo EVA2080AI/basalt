@@ -6,28 +6,7 @@ import { paymentMiddleware } from "@x402/express";
 import { createResourceServer, buildRoutes, paymentRequirementsFor } from "./payments/x402Server.js";
 import { initWallet } from "./wallet/wallet.js";
 import { DEFAULT_POLICY } from "./governance/policy.js";
-import type { Product } from "./products/types.js";
-import { urlMetadataProduct } from "./projects/url-metadata/product.js";
-import { domainCheckProduct } from "./projects/domain-check/product.js";
-import { emailCheckProduct } from "./projects/email-check/product.js";
-import { htmlToMarkdownProduct } from "./projects/html-to-markdown/product.js";
-import { qrcodeProduct } from "./projects/qrcode/product.js";
-import { pdfExtractProduct } from "./projects/pdf-extract/product.js";
-import { sslCheckProduct } from "./projects/ssl-check/product.js";
-import { languageDetectProduct } from "./projects/language-detect/product.js";
-import { jsonValidateProduct } from "./projects/json-validate/product.js";
-import { verifySignatureProduct } from "./projects/verify-signature/product.js";
-import { financialIdCheckProduct } from "./projects/financial-id-check/product.js";
-import { geoDistanceProduct } from "./projects/geo-distance/product.js";
-import { markdownToHtmlProduct } from "./projects/markdown-to-html/product.js";
-import { timezoneConvertProduct } from "./projects/timezone-convert/product.js";
-import { tokenCountProduct } from "./projects/token-count/product.js";
-import { hashDigestProduct } from "./projects/hash-digest/product.js";
-import { jwtDecodeProduct } from "./projects/jwt-decode/product.js";
-import { urlParseProduct } from "./projects/url-parse/product.js";
-import { ethAddressProduct } from "./projects/eth-address/product.js";
-import { ipCheckProduct } from "./projects/ip-check/product.js";
-import { x402DiscoverProduct } from "./projects/x402-discover/product.js";
+import { PRODUCTS } from "./products/catalog.js";
 import { loadSnapshot, refresh as refreshPeers, revalidateKnown, registrySummary } from "./discovery/registry.js";
 import { introspect } from "./discovery/introspect.js";
 
@@ -35,56 +14,10 @@ import { introspect } from "./discovery/introspect.js";
  * Un solo servidor para todos los productos de Basalt. Agregar el producto
  * #21 es agregar una entrada a esta lista — no un puerto ni un proceso nuevo.
  */
-const PRODUCTS: Product[] = [
-  urlMetadataProduct,
-  domainCheckProduct,
-  emailCheckProduct,
-  htmlToMarkdownProduct,
-  qrcodeProduct,
-  pdfExtractProduct,
-  sslCheckProduct,
-  languageDetectProduct,
-  jsonValidateProduct,
-  verifySignatureProduct,
-  financialIdCheckProduct,
-  geoDistanceProduct,
-  markdownToHtmlProduct,
-  timezoneConvertProduct,
-  tokenCountProduct,
-  hashDigestProduct,
-  jwtDecodeProduct,
-  urlParseProduct,
-  ethAddressProduct,
-  ipCheckProduct,
-  x402DiscoverProduct,
-];
 
 // Descripciones en español para la página /es — el resto de la superficie
 // (API, OpenAPI, /products) está en inglés a propósito: es el idioma que
 // habla el ecosistema x402 (directorios, facilitators, otros agentes).
-const ES_DESCRIPTIONS: Record<string, string> = {
-  "x402-discover": "Busca en un índice de endpoints x402 vivos — cada uno verificado golpeándolo, no copiado de un directorio — filtrando por capacidad, precio máximo y red.",
-  "url-metadata": "Extrae título, descripción, imagen y texto limpio de una URL — pensado para que otros agentes lo consuman.",
-  "domain-check": "Revisa si un dominio está disponible para registrar vía RDAP, o quién lo tiene y cuándo vence si no lo está.",
-  "email-check": "Valida sintaxis de un email y confirma registros MX reales del dominio — filtra direcciones que no pueden recibir correo.",
-  "html-to-markdown": "Convierte HTML a Markdown limpio — para que un agente no tenga que implementar su propio conversor.",
-  qrcode: "Genera un código QR (PNG en base64) para un texto o URL.",
-  "pdf-extract": "Extrae el texto de un PDF dado por URL.",
-  "ssl-check": "Revisa el certificado TLS de un dominio: validez, emisor, y días hasta que vence.",
-  "language-detect": "Detecta el idioma de un texto (186 idiomas soportados), con el top 3 más probable.",
-  "json-validate": "Valida un payload JSON contra un JSON Schema y devuelve los errores exactos.",
-  "verify-signature": "Recupera el firmante de una firma EIP-191 o EIP-712 y la compara contra una dirección declarada.",
-  "financial-id-check": "Valida un IBAN (checksum mod-97), un BIC/SWIFT (formato ISO 9362), o un número de tarjeta (checksum de Luhn).",
-  "geo-distance": "Calcula la distancia ortodrómica (km/mi) y el rumbo inicial entre dos coordenadas lat/lng.",
-  "markdown-to-html": "Convierte Markdown a HTML — el sentido inverso de html-to-markdown.",
-  "timezone-convert": "Convierte un instante ISO 8601 a la hora local de cualquier zona horaria IANA, con horario de verano incluido.",
-  "token-count": "Cuenta tokens de un texto con la codificación BPE real de los modelos GPT (cl100k_base u o200k_base) — para revisar el largo antes de llamar a un LLM.",
-  "hash-digest": "Calcula el hash de un texto con sha256, sha512, sha1, md5, sha3-256 o keccak256 — opcionalmente como HMAC con una clave secreta.",
-  "jwt-decode": "Decodifica el header y los claims de un JWT y reporta su estado temporal (activo, vencido, aún no válido) — sin verificar la firma.",
-  "url-parse": "Descompone una URL en sus partes y devuelve una forma canónica normalizada, sin parámetros de rastreo (utm_*, fbclid, gclid…).",
-  "eth-address": "Valida una dirección EVM y devuelve su forma con checksum EIP-55; detecta checksums incorrectos y la dirección cero.",
-  "ip-check": "Clasifica una IP v4/v6 (pública, privada, loopback, link-local, reservada…) y la prueba contra rangos CIDR opcionales — un chequeo anti-SSRF / allowlist.",
-};
 
 const PORT = Number(process.env.PORT ?? 4021);
 
@@ -262,7 +195,7 @@ async function main() {
           };
 
     const rows = PRODUCTS.map((p) => {
-      const desc = lang === "es" ? (ES_DESCRIPTIONS[p.id] ?? p.description) : p.description;
+      const desc = lang === "es" ? (p.descriptionEs ?? p.description) : p.description;
       return `<tr><td><code>${p.method} ${p.path}</code></td><td>$${p.priceUsd} USDC</td><td>${p.launchedAt}</td><td>${desc}</td></tr>`;
     }).join("");
 

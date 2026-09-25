@@ -14,6 +14,8 @@ export const urlParseProduct: Product = {
   path: "/url-parse",
   priceUsd: Number(process.env.AUTOMATON_PRICE_URL_PARSE_USD ?? 0.002),
   description: "Parses a URL into its components and returns a normalized canonical form with tracking parameters (utm_*, fbclid, gclid…) removed.",
+  descriptionEs:
+    "Descompone una URL en sus partes y devuelve una forma canónica normalizada, sin parámetros de rastreo (utm_*, fbclid, gclid…).",
   launchedAt: "2026-09-12",
   inputSchema: {
     type: "object",

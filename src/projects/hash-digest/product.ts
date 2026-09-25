@@ -16,6 +16,8 @@ export const hashDigestProduct: Product = {
   path: "/hash-digest",
   priceUsd: Number(process.env.AUTOMATON_PRICE_HASH_DIGEST_USD ?? 0.002),
   description: "Hashes text with sha256, sha512, sha1, md5, sha3-256, or keccak256 — optionally as an HMAC with a secret key.",
+  descriptionEs:
+    "Calcula el hash de un texto con sha256, sha512, sha1, md5, sha3-256 o keccak256 — opcionalmente como HMAC con una clave secreta.",
   launchedAt: "2026-09-12",
   inputSchema: {
     type: "object",

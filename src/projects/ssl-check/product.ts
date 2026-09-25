@@ -7,6 +7,8 @@ export const sslCheckProduct: Product = {
   path: "/ssl-check",
   priceUsd: Number(process.env.AUTOMATON_PRICE_SSL_CHECK_USD ?? 0.005),
   description: "Checks a domain's TLS certificate: validity, issuer, and days until expiry.",
+  descriptionEs:
+    "Revisa el certificado TLS de un dominio: validez, emisor, y días hasta que vence.",
   launchedAt: "2026-09-09",
   inputSchema: { type: "object", required: ["domain"], properties: { domain: { type: "string" } } },
   inputExample: { domain: "example.com" },

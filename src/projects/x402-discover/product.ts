@@ -30,6 +30,8 @@ export const x402DiscoverProduct: Product = {
   priceUsd: Number(process.env.AUTOMATON_PRICE_X402_DISCOVER_USD ?? 0.02),
   description:
     "Searches an index of live x402 seller endpoints — each verified by knocking, not scraped — filtering by capability, max price and network.",
+  descriptionEs:
+    "Busca en un índice de endpoints x402 vivos — cada uno verificado golpeándolo, no copiado de un directorio — filtrando por capacidad, precio máximo y red.",
   launchedAt: "2026-09-24",
   inputSchema: {
     type: "object",

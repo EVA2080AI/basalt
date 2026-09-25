@@ -43,6 +43,8 @@ export const timezoneConvertProduct: Product = {
   path: "/timezone-convert",
   priceUsd: Number(process.env.AUTOMATON_PRICE_TIMEZONE_CONVERT_USD ?? 0.002),
   description: "Converts an ISO 8601 instant into the local wall-clock time of any IANA time zone, DST-aware.",
+  descriptionEs:
+    "Convierte un instante ISO 8601 a la hora local de cualquier zona horaria IANA, con horario de verano incluido.",
   launchedAt: "2026-09-10",
   inputSchema: {
     type: "object",
