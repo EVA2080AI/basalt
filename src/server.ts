@@ -27,6 +27,8 @@ import { jwtDecodeProduct } from "./projects/jwt-decode/product.js";
 import { urlParseProduct } from "./projects/url-parse/product.js";
 import { ethAddressProduct } from "./projects/eth-address/product.js";
 import { ipCheckProduct } from "./projects/ip-check/product.js";
+import { x402DiscoverProduct } from "./projects/x402-discover/product.js";
+import { loadSnapshot, refresh as refreshPeers, registrySummary } from "./discovery/registry.js";
 
 /**
  * Un solo servidor para todos los productos de Basalt. Agregar el producto
@@ -53,12 +55,14 @@ const PRODUCTS: Product[] = [
   urlParseProduct,
   ethAddressProduct,
   ipCheckProduct,
+  x402DiscoverProduct,
 ];
 
 // Descripciones en español para la página /es — el resto de la superficie
 // (API, OpenAPI, /products) está en inglés a propósito: es el idioma que
 // habla el ecosistema x402 (directorios, facilitators, otros agentes).
 const ES_DESCRIPTIONS: Record<string, string> = {
+  "x402-discover": "Busca en un índice de endpoints x402 vivos — cada uno verificado golpeándolo, no copiado de un directorio — filtrando por capacidad, precio máximo y red.",
   "url-metadata": "Extrae título, descripción, imagen y texto limpio de una URL — pensado para que otros agentes lo consuman.",
   "domain-check": "Revisa si un dominio está disponible para registrar vía RDAP, o quién lo tiene y cuándo vence si no lo está.",
   "email-check": "Valida sintaxis de un email y confirma registros MX reales del dominio — filtra direcciones que no pueden recibir correo.",
@@ -338,9 +342,29 @@ async function main() {
   // proceso esté arriba; console.log queda en los logs de Render.
   let heartbeats = 0;
   const HEARTBEAT_MS = 15 * 60 * 1000;
+
+  // El índice de pares arranca del snapshot commiteado: una request pagada
+  // nunca espera a un tercero.
+  loadSnapshot();
+  console.log(`[basalt] índice de pares cargado — ${JSON.stringify(registrySummary())}`);
+
+  // Rastreo hacia afuera. Esto es lo único "autónomo" que toma iniciativa
+  // propia, y es deliberadamente solo lectura: descubre, nunca paga ni firma
+  // (el límite duro 1 no se toca desde acá). Cada 6h, contado en pulsos para
+  // no montar un segundo temporizador.
+  const CRAWL_EVERY_HEARTBEATS = 24; // 24 * 15min = 6h
+
   setInterval(() => {
     heartbeats++;
     console.log(`[basalt] pulso #${heartbeats} — ${JSON.stringify(toolStats().summary)}`);
+
+    if (heartbeats % CRAWL_EVERY_HEARTBEATS === 0) {
+      const startedAtCrawl = new Date().toISOString();
+      console.log(`[basalt] rastreando el ecosistema x402 (solo lectura)…`);
+      void refreshPeers(startedAtCrawl).then(() => {
+        console.log(`[basalt] índice de pares actualizado — ${JSON.stringify(registrySummary())}`);
+      });
+    }
   }, HEARTBEAT_MS).unref();
 
   app.get("/pulse", (_req, res) => {
@@ -354,6 +378,7 @@ async function main() {
       address: wallet.address,
       network: DEFAULT_POLICY.network,
       toolCount: PRODUCTS.length,
+      peerIndex: registrySummary(),
       summary,
       selfReport:
         `He estado vivo ${uptimeSeconds}s desde mi último despliegue (nace de nuevo con cada uno — no es memoria falsa). ` +
